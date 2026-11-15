@@ -1,0 +1,700 @@
+         <!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Рисувачка</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233a7bd5'/%3E%3Cpath d='M16 48l4-12 24-24 8 8-24 24z' fill='%23fff'/%3E%3Cpath d='M44 12l8 8' stroke='%23f7d774' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:system-ui,sans-serif}
+  #wrap{position:fixed;inset:0}
+  canvas{display:block;position:absolute;top:0;left:0;touch-action:none;cursor:crosshair}
+
+  #menuBtn{
+    position:fixed;z-index:200;
+    width:48px;height:48px;border-radius:50%;
+    background:rgba(40,50,80,0.9);
+    border:2px solid rgba(255,255,255,0.4);
+    color:#fff;font-size:22px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,0.5);
+    left:12px;top:12px;
+    transition: left 0.35s ease, top 0.35s ease;
+  }
+
+  #ui{
+    position:fixed;z-index:150;
+    left:12px;top:70px;
+    width:320px;max-width:calc(100vw - 24px);
+    background:rgba(20,22,35,0.55);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:14px;
+    color:#eee;font-size:13px;display:none;
+    box-shadow:0 8px 30px rgba(0,0,0,0.35);
+    touch-action:none;
+  }
+  #ui.show{display:block}
+  #uiScroll{
+    padding:12px;
+    max-height:80vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:14px;
+    touch-action:none;
+  }
+
+  /* 8 стрілок-ручок по периметру меню */
+  .dragHandle{
+    position:absolute;
+    width:26px;height:26px;
+    background:rgba(58,123,213,0.92);
+    border:1.5px solid rgba(255,255,255,0.65);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:14px;font-weight:bold;
+    cursor:grab;
+    z-index:10;
+    touch-action:none;
+    box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  }
+  .dragHandle:active{cursor:grabbing}
+  .dragHandle[data-dir="nw"]{left:-13px;top:-13px}
+  .dragHandle[data-dir="n"] {left:50%;top:-13px;transform:translateX(-50%)}
+  .dragHandle[data-dir="ne"]{right:-13px;top:-13px}
+  .dragHandle[data-dir="w"] {left:-13px;top:50%;transform:translateY(-50%)}
+  .dragHandle[data-dir="e"] {right:-13px;top:50%;transform:translateY(-50%)}
+  .dragHandle[data-dir="sw"]{left:-13px;bottom:-13px}
+  .dragHandle[data-dir="s"] {left:50%;bottom:-13px;transform:translateX(-50%)}
+  .dragHandle[data-dir="se"]{right:-13px;bottom:-13px}
+
+  .section{margin-bottom:12px}
+  .section h3{font-size:11px;opacity:0.75;margin-bottom:5px;text-transform:uppercase}
+
+  .colors{
+    display:grid;grid-template-columns:repeat(16,1fr);gap:2px;
+    background:rgba(0,0,0,0.25);padding:4px;border-radius:8px;
+  }
+  .colors div{aspect-ratio:1;border-radius:2px;cursor:pointer;border:1px solid rgba(0,0,0,0.3)}
+  .colors div.active{outline:2px solid #fff;z-index:5}
+
+  .tools,.drawings,.actions{display:flex;flex-wrap:wrap;gap:5px}
+  button{
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.22);
+    color:#fff;padding:6px 9px;border-radius:6px;cursor:pointer;font-size:12px;
+    touch-action:manipulation;
+  }
+  button.active{background:#3a7bd5}
+
+  input[type=range]{touch-action:manipulation}
+
+  #status{position:fixed;bottom:8px;left:12px;font-size:11px;color:#999;z-index:50;pointer-events:none}
+
+  #edgeMask{
+    position:fixed;inset:0;pointer-events:none;z-index:80;display:none;
+    box-shadow: inset 0 0 0 28px rgba(255,60,60,0.14);
+  }
+  #edgeMask.show{display:block}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="edgeMask"></div>
+<div id="menuBtn">☰</div>
+
+<div id="ui">
+  <div class="dragHandle" data-dir="nw">↖</div>
+  <div class="dragHandle" data-dir="n">↑</div>
+  <div class="dragHandle" data-dir="ne">↗</div>
+  <div class="dragHandle" data-dir="w">←</div>
+  <div class="dragHandle" data-dir="e">→</div>
+  <div class="dragHandle" data-dir="sw">↙</div>
+  <div class="dragHandle" data-dir="s">↓</div>
+  <div class="dragHandle" data-dir="se">↘</div>
+
+  <div id="uiScroll">
+    <div class="section">
+      <h3>Режим</h3>
+      <div class="tools" id="modes">
+        <button data-mode="draw" class="active">Малювати</button>
+        <button data-mode="dragmenu">Тягати меню</button>
+        <button data-mode="edge">Екран</button>
+      </div>
+      <div id="modeHint" style="margin-top:5px;font-size:11px;opacity:0.8">Малювання на полотні.</div>
+    </div>
+
+    <div class="section">
+      <h3>Кольори 256</h3>
+      <div class="colors" id="palette"></div>
+    </div>
+
+    <div class="section">
+      <h3>Інструменти</h3>
+      <div class="tools">
+        <button data-tool="pen" class="active">Олівець 1px</button>
+        <button data-tool="pen11">Олівець 11px</button>
+        <button data-tool="gradnet">Градієнт</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Градієнт</h3>
+      <div class="actions">
+        <button id="btnGenRays">Згенерувати промені</button>
+        <button id="btnClearSeeds">Очистити точки</button>
+      </div>
+      <div id="seedInfo" style="margin-top:5px;font-size:11px;opacity:0.8">Точок: 0</div>
+    </div>
+
+    <div class="section">
+      <h3>Малюнки</h3>
+      <div class="drawings" id="drawings"></div>
+    </div>
+
+    <div class="section">
+      <h3>Зум</h3>
+      <div class="actions" style="align-items:center;flex-wrap:nowrap">
+        <button id="zoomOut">−</button>
+        <input id="zoomSlider" type="range" min="60" max="4000" value="100" style="flex:1;margin:0 6px">
+        <button id="zoomIn">+</button>
+      </div>
+      <div id="zoomVal" style="margin-top:5px;font-size:11px;opacity:0.8">100%</div>
+    </div>
+
+    <div class="section">
+      <h3>Збереження</h3>
+      <div class="actions">
+        <button id="btnSavePng">PNG</button>
+        <button id="btnSaveIco">ICO 16/32/48/64/256</button>
+        <button id="btnClear">Очистити</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status">Олівець 1px • Олівець 11px • білий колір = гумка • зум до 4000% • 8 ручок тягання</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const ui = document.getElementById('ui');
+  const uiScroll = document.getElementById('uiScroll');
+  const menuBtn = document.getElementById('menuBtn');
+  const status = document.getElementById('status');
+  const seedInfo = document.getElementById('seedInfo');
+  const palette = document.getElementById('palette');
+  const drawingsEl = document.getElementById('drawings');
+  const zoomSlider = document.getElementById('zoomSlider');
+  const zoomVal = document.getElementById('zoomVal');
+  const edgeMask = document.getElementById('edgeMask');
+  const modeHint = document.getElementById('modeHint');
+
+  let W = 0, H = 0;
+  let view = { x: 0, y: 0, scale: 1 };
+  let tool = 'pen';
+  let color = '#e74c3c';
+  let drawing = false;
+  let last = null;
+  let activePointer = null;
+  let drawings = [];
+  let current = 0;
+  let seeds = [];
+  let isPanning = false;
+  let panStart = null;
+  let spaceDown = false;
+  let mode = 'draw';
+  let menuDrag = null;        // перетягування меню (8 ручок + порожні місця)
+  let canvasMenuDrag = null;  // перетягування меню по полотну (режим dragmenu)
+  const EDGE_BAND = 28;
+  const PEN_W = 1;
+  const THICK_W = 11;
+  const ZOOM_MIN = 0.6;
+  const ZOOM_MAX = 40;        // 4000%
+
+  function createDrawings() {
+    drawings = [];
+    for (let i = 0; i < 11; i++) {
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const cx = c.getContext('2d');
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(0, 0, W, H);
+      drawings.push({ canvas: c, ctx: cx });
+    }
+  }
+
+  function resize() {
+    const nw = window.innerWidth, nh = window.innerHeight;
+    if (nw === W && nh === H) return;
+    W = nw; H = nh;
+    canvas.width = W;
+    canvas.height = H;
+
+    if (!drawings.length) {
+      createDrawings();
+    } else {
+      drawings.forEach(d => {
+        const nc = document.createElement('canvas');
+        nc.width = W; nc.height = H;
+        const nx = nc.getContext('2d');
+        nx.drawImage(d.canvas, 0, 0);
+        d.canvas = nc;
+        d.ctx = nx;
+      });
+    }
+    clampView();
+    redraw();
+  }
+  window.addEventListener('resize', resize);
+
+  function hslToHex(h, s, l) {
+    h /= 360;
+    let r, g, b;
+    if (s === 0) r = g = b = l;
+    else {
+      const f = (p, q, t) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = f(p, q, h + 1/3); g = f(p, q, h); b = f(p, q, h - 1/3);
+    }
+    return '#' + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
+  }
+
+  for (let i = 0; i < 256; i++) {
+    let col;
+    if (i === 0) col = '#000000';
+    else if (i === 1) col = '#ffffff';
+    else {
+      const k = i - 2;
+      const hue = (k % 16) * 22.5;
+      const sat = 0.55 + 0.45 * ((k >> 4) % 4) / 3;
+      const light = 0.40 + 0.40 * (k >> 6) / 3;
+      col = hslToHex(hue, sat, light);
+    }
+    const d = document.createElement('div');
+    d.style.background = col;
+    d.onclick = e => {
+      e.stopPropagation();
+      color = col;
+      document.querySelectorAll('.colors div').forEach(el => el.classList.remove('active'));
+      d.classList.add('active');
+    };
+    palette.appendChild(d);
+  }
+  palette.children[8].classList.add('active');
+  color = palette.children[8].style.background;
+
+  for (let i = 0; i < 11; i++) {
+    const b = document.createElement('button');
+    b.textContent = i + 1;
+    if (i === 0) b.classList.add('active');
+    b.onclick = e => {
+      e.stopPropagation();
+      current = i;
+      document.querySelectorAll('#drawings button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      redraw();
+    };
+    drawingsEl.appendChild(b);
+  }
+
+  document.querySelectorAll('[data-tool]').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      tool = btn.dataset.tool;
+      document.querySelectorAll('[data-tool]').forEach(x => x.classList.toggle('active', x === btn));
+    };
+  });
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('active', x.dataset.mode === m));
+    edgeMask.classList.toggle('show', m === 'edge');
+    canvas.style.cursor = m === 'dragmenu' ? 'move' : 'crosshair';
+    if (m === 'draw') modeHint.textContent = 'Малювання на полотні.';
+    else if (m === 'dragmenu') modeHint.textContent = 'Перетягуйте меню пальцем/мишею будь-де по екрану.';
+    else modeHint.textContent = 'Крайові смуги 28px ігноруються (для сенсорів з мертвими зонами).';
+  }
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      setMode(btn.dataset.mode);
+    };
+  });
+
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    ui.classList.toggle('show');
+  });
+
+  function moveMenuButtonRandom() {
+    const margin = 12;
+    const x = margin + Math.random() * Math.max(1, W - 48 - margin * 2);
+    const y = margin + Math.random() * Math.max(1, H - 48 - margin * 2);
+    menuBtn.style.left = x + 'px';
+    menuBtn.style.top = y + 'px';
+  }
+  setInterval(moveMenuButtonRandom, 11000);
+
+  /* ---------- перетягування меню: 8 ручок + порожні місця ---------- */
+  function moveMenu(x, y) {
+    const minV = 28;
+    x = Math.max(-ui.offsetWidth + minV, Math.min(W - minV, x));
+    y = Math.max(-ui.offsetHeight + minV, Math.min(H - minV, y));
+    ui.style.left = x + 'px';
+    ui.style.top = y + 'px';
+  }
+
+  function startMenuDrag(e) {
+    const t = e.target;
+    if (t.closest('button') || t.closest('input') || t.closest('.colors')) return;
+    const r = ui.getBoundingClientRect();
+    menuDrag = {
+      id: e.pointerId,
+      px: e.clientX,
+      py: e.clientY,
+      left: r.left,
+      top: r.top
+    };
+    ui.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  ui.addEventListener('pointerdown', startMenuDrag);
+  ui.addEventListener('pointermove', e => {
+    if (!menuDrag || e.pointerId !== menuDrag.id) return;
+    moveMenu(
+      menuDrag.left + (e.clientX - menuDrag.px),
+      menuDrag.top + (e.clientY - menuDrag.py)
+    );
+    e.preventDefault();
+  });
+  ui.addEventListener('pointerup', e => {
+    if (menuDrag && e.pointerId === menuDrag.id) menuDrag = null;
+  });
+  ui.addEventListener('pointercancel', e => {
+    if (menuDrag && e.pointerId === menuDrag.id) menuDrag = null;
+  });
+
+  function toWorld(sx, sy) {
+    return { x: sx / view.scale + view.x, y: sy / view.scale + view.y };
+  }
+  function clampView() {
+    const lim = Math.min(W, H) * 0.10 * Math.max(1, view.scale);
+    view.x = Math.max(-lim, Math.min(lim, view.x));
+    view.y = Math.max(-lim, Math.min(lim, view.y));
+  }
+  function inEdgeBand(x, y) {
+    return x < EDGE_BAND || y < EDGE_BAND || x > W - EDGE_BAND || y > H - EDGE_BAND;
+  }
+
+  function drawLine(x1, y1, x2, y2) {
+    const c = drawings[current].ctx;
+    c.save();
+    c.globalCompositeOperation = 'source-over';
+    c.strokeStyle = color;
+    c.lineWidth = tool === 'pen11' ? THICK_W : PEN_W;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(x1, y1);
+    c.lineTo(x2, y2);
+    c.stroke();
+    c.restore();
+  }
+
+  function redraw() {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.scale(view.scale, view.scale);
+    ctx.translate(-view.x, -view.y);
+
+    if (drawings[current]) ctx.drawImage(drawings[current].canvas, 0, 0);
+
+    seeds.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 6 / view.scale, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5 / view.scale;
+      ctx.stroke();
+    });
+
+    ctx.restore();
+
+    const pct = Math.round(view.scale * 100);
+    zoomSlider.value = pct;
+    zoomVal.textContent = pct + '%';
+    seedInfo.textContent = 'Точок: ' + seeds.length;
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+      isPanning = true;
+      panStart = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+      canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (e.button !== 0) return;
+
+    if (mode === 'dragmenu') {
+      const r = ui.getBoundingClientRect();
+      canvasMenuDrag = { px: e.clientX, py: e.clientY, left: r.left, top: r.top };
+      ui.style.left = r.left + 'px';
+      ui.style.top = r.top + 'px';
+      canvas.setPointerCapture(e.pointerId);
+      activePointer = e.pointerId;
+      return;
+    }
+
+    if (mode === 'edge' && inEdgeBand(e.clientX, e.clientY)) return;
+
+    const p = toWorld(e.clientX, e.clientY);
+
+    if (tool === 'gradnet') {
+      seeds.push({ x: p.x, y: p.y, color });
+      redraw();
+      return;
+    }
+
+    drawing = true;
+    activePointer = e.pointerId;
+    last = p;
+    canvas.setPointerCapture(e.pointerId);
+    drawLine(p.x, p.y, p.x, p.y);
+    redraw();
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (isPanning && panStart) {
+      view.x = panStart.vx - (e.clientX - panStart.x) / view.scale;
+      view.y = panStart.vy - (e.clientY - panStart.y) / view.scale;
+      clampView();
+      redraw();
+      return;
+    }
+    if (canvasMenuDrag) {
+      moveMenu(
+        canvasMenuDrag.left + (e.clientX - canvasMenuDrag.px),
+        canvasMenuDrag.top + (e.clientY - canvasMenuDrag.py)
+      );
+      return;
+    }
+    if (!drawing) return;
+    if (activePointer !== null && e.pointerId !== activePointer) return;
+    const p = toWorld(e.clientX, e.clientY);
+    drawLine(last.x, last.y, p.x, p.y);
+    last = p;
+    redraw();
+  });
+
+  function endPointer(e) {
+    if (e && activePointer !== null && e.pointerId !== activePointer) return;
+    drawing = false;
+    isPanning = false;
+    panStart = null;
+    canvasMenuDrag = null;
+    activePointer = null;
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  function setZoom(newScale, cx, cy) {
+    newScale = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newScale));
+    if (cx === undefined) cx = W / 2;
+    if (cy === undefined) cy = H / 2;
+    const mx = cx / view.scale + view.x;
+    const my = cy / view.scale + view.y;
+    view.scale = newScale;
+    view.x = mx - cx / view.scale;
+    view.y = my - cy / view.scale;
+    clampView();
+    redraw();
+  }
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    setZoom(view.scale * f, e.clientX, e.clientY);
+  }, { passive: false });
+
+  zoomSlider.addEventListener('input', () => setZoom(parseInt(zoomSlider.value, 10) / 100));
+  document.getElementById('zoomIn').onclick = e => { e.stopPropagation(); setZoom(view.scale * 1.15); };
+  document.getElementById('zoomOut').onclick = e => { e.stopPropagation(); setZoom(view.scale / 1.15); };
+
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { spaceDown = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', e => {
+    if (e.code === 'Space') spaceDown = false;
+  });
+
+  document.getElementById('btnGenRays').onclick = e => {
+    e.stopPropagation();
+    if (seeds.length < 2) return;
+    const c = drawings[current].ctx;
+    for (let i = 0; i < seeds.length; i++) {
+      for (let j = i + 1; j < seeds.length; j++) {
+        const a = seeds[i], b = seeds[j];
+        const g = c.createLinearGradient(a.x, a.y, b.x, b.y);
+        g.addColorStop(0, a.color);
+        g.addColorStop(1, b.color);
+        c.strokeStyle = g;
+        c.lineWidth = 2.5;
+        c.beginPath();
+        c.moveTo(a.x, a.y);
+        c.lineTo(b.x, b.y);
+        c.stroke();
+      }
+    }
+    redraw();
+  };
+  document.getElementById('btnClearSeeds').onclick = e => {
+    e.stopPropagation();
+    seeds = [];
+    redraw();
+  };
+
+  document.getElementById('btnClear').onclick = e => {
+    e.stopPropagation();
+    const c = drawings[current].ctx;
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, W, H);
+    seeds = [];
+    redraw();
+  };
+
+  document.getElementById('btnSavePng').onclick = e => {
+    e.stopPropagation();
+    const a = document.createElement('a');
+    a.href = drawings[current].canvas.toDataURL('image/png');
+    a.download = `малюнок_${current + 1}.png`;
+    a.click();
+  };
+
+  /* =====================================================
+     СПРАВЖНІЙ ICO 16/32/48/64/256 в одному файлі
+     16–64  → BMP 32bpp (DIB)
+     256    → PNG (стандарт Windows Vista+)
+     ===================================================== */
+  function canvasToIco(sourceCanvas, sizes) {
+    const images = sizes.map(size => {
+      const tmp = document.createElement('canvas');
+      tmp.width = size; tmp.height = size;
+      const tctx = tmp.getContext('2d');
+      tctx.imageSmoothingEnabled = true;
+      tctx.imageSmoothingQuality = 'high';
+      tctx.drawImage(
+        sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height,
+        0, 0, size, size
+      );
+
+      if (size >= 256) {
+        const dataUrl = tmp.toDataURL('image/png');
+        const b64 = dataUrl.split(',')[1];
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return { size, buffer: arr.buffer };
+      }
+
+      const img = tctx.getImageData(0, 0, size, size).data;
+      const headerSize = 40;
+      const xorSize = size * size * 4;
+      const rowBytes = Math.ceil(size / 32) * 4;
+      const andSize = rowBytes * size;
+      const dibSize = headerSize + xorSize + andSize;
+
+      const buf = new ArrayBuffer(dibSize);
+      const dv = new DataView(buf);
+      let o = 0;
+
+      dv.setUint32(o, headerSize, true); o += 4;
+      dv.setInt32(o, size, true); o += 4;
+      dv.setInt32(o, size * 2, true); o += 4;
+      dv.setUint16(o, 1, true); o += 2;
+      dv.setUint16(o, 32, true); o += 2;
+      dv.setUint32(o, 0, true); o += 4;
+      dv.setUint32(o, xorSize + andSize, true); o += 4;
+      dv.setInt32(o, 0, true); o += 4;
+      dv.setInt32(o, 0, true); o += 4;
+      dv.setUint32(o, 0, true); o += 4;
+      dv.setUint32(o, 0, true); o += 4;
+
+      for (let y = size - 1; y >= 0; y--) {
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4;
+          dv.setUint8(o++, img[i + 2]);
+          dv.setUint8(o++, img[i + 1]);
+          dv.setUint8(o++, img[i]);
+          dv.setUint8(o++, img[i + 3]);
+        }
+      }
+
+      return { size, buffer: buf };
+    });
+
+    const dirSize = 6 + 16 * images.length;
+    let dataOffset = dirSize;
+    let totalSize = dirSize;
+    images.forEach(im => totalSize += im.buffer.byteLength);
+
+    const out = new ArrayBuffer(totalSize);
+    const dv = new DataView(out);
+    const u8 = new Uint8Array(out);
+    let o = 0;
+
+    dv.setUint16(o, 0, true); o += 2;
+    dv.setUint16(o, 1, true); o += 2;
+    dv.setUint16(o, images.length, true); o += 2;
+
+    images.forEach(im => {
+      dv.setUint8(o++, im.size >= 256 ? 0 : im.size);
+      dv.setUint8(o++, im.size >= 256 ? 0 : im.size);
+      dv.setUint8(o++, 0);
+      dv.setUint8(o++, 0);
+      dv.setUint16(o, 1, true); o += 2;
+      dv.setUint16(o, 32, true); o += 2;
+      dv.setUint32(o, im.buffer.byteLength, true); o += 4;
+      dv.setUint32(o, dataOffset, true); o += 4;
+      dataOffset += im.buffer.byteLength;
+    });
+
+    let offset = dirSize;
+    images.forEach(im => {
+      u8.set(new Uint8Array(im.buffer), offset);
+      offset += im.buffer.byteLength;
+    });
+
+    return new Blob([out], { type: 'image/x-icon' });
+  }
+
+  document.getElementById('btnSaveIco').onclick = e => {
+    e.stopPropagation();
+    const blob = canvasToIco(drawings[current].canvas, [16, 32, 48, 64, 256]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `малюнок_${current + 1}.ico`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  resize();
+  redraw();
+})();
+</script>
+</body>
+</html>   
