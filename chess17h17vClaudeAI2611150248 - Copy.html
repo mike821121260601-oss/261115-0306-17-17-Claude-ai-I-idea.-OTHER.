@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Шахи 17×17</title>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:#1d2321;color:#e9e4d6;font-family:system-ui,sans-serif}
+#bar{flex:none;padding:4px;text-align:center;font-size:14px}
+#bar select,#bar button{font-size:14px;margin:2px;padding:4px 8px}
+#cnt{flex:none;text-align:center;font-size:12px;color:#b9c4bf;padding:0 6px 2px}
+#msg{flex:none;text-align:center;font-weight:600;font-size:14px;padding:2px}
+#wrap{flex:1;min-height:0;overflow:auto;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+#bd{display:inline-block}
+#kp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#2b3330;border:1px solid #889;border-radius:6px;padding:10px;z-index:9;text-align:center}
+#kp[hidden]{display:none}
+#kd{font-size:28px;min-height:36px;margin:4px 0}
+#kg{display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+#kg button{font-size:22px;padding:12px 0}
+</style></head><body>
+<div id="bar">Білі <select id="w"><option selected>human</option><option>greedy</option><option>random</option><option>alphabeta</option><option>alphabeta takes check small on big or new attacks</option><option>alphabeta middletosides sort</option><option>test pains board alphabeta</option></select>
+Чорні <select id="k"><option selected>human</option><option>greedy</option><option>random</option><option>alphabeta</option><option>alphabeta takes check small on big or new attacks</option><option>alphabeta middletosides sort</option><option>test pains board alphabeta</option></select> глибина <select id="dp"><option>1</option><option selected>2</option><option>3</option><option>4</option></select> сек <select id="tm"><option>1</option><option selected>3</option><option>10</option><option>15</option><option>20</option><option>26</option><option>31</option></select> <label title="взяття, шах, мала на велику, нові напади"><input type="checkbox" id="ao"> порядок за нападами</label><br>
+<button id="u">◀ назад</button><button id="f">вперед ▶</button><button id="m">Пам’ять</button><button id="n">Нова гра</button><button id="p">Пауза</button><br><button id="zm">−</button><button id="zp">+</button><button id="fit">⊡ вписати</button><label><input type="checkbox" id="ar" checked> стрілки</label></div>
+<div id="msg"></div>
+<div id="cnt"></div>
+<div id="kp" hidden><div>Пам’ять 1–111 · тягни, щоб посунути</div><div id="kd">—</div><div id="kg"></div><button id="kx" style="margin-top:8px;font-size:16px">Скасувати</button></div>
+<div id="wrap"><div id="bd"></div></div>
+<script>
+// Розмір клітинки фіксований (CELL). Дошка прокручується пальцем у всі боки.
+const N=17, PAWN_STEPS=5; let CELL=44;
+const BACK="RNBANBCQKQCBNABNR", SECOND="BNRCAQBRNRBQACRNB"; // по 17
+const VAL={P:1,N:3,B:3,R:5,A:7,C:8,Q:9,K:100};
+const ROOK=[[1,0],[-1,0],[0,1],[0,-1]], BISH=[[1,1],[1,-1],[-1,1],[-1,-1]];
+const KNIGHT=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]], KING=ROOK.concat(BISH);
+// Фігури: лінії 1 піксель
+const CIR=(x,y,r)=>`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0`;
+const IC={
+P:CIR(10,6,2.5)+'M6 16.5c0-4 1.5-5.5 4-5.5s4 1.5 4 5.5z',
+R:'M5 16.5h10v-2H5zM6 14.5V8.5h8v6M5 8.5V4.5h2v1.5h2V4.5h2v1.5h2V4.5h2v4z',
+N:'M5 16.5V14c0-4 1-7 5-10l1 2c3 1 4 4 4 8v2.5z'+CIR(9,8,.6),
+B:CIR(10,3.5,1)+'M10 5c-3 2-4 5-2 8h4c2-3 1-6-2-8zM6 16.5h8l-1.5-3.5h-5z',
+Q:'M4 6l2 8h8l2-8-3.5 4L10 4.5 7.5 10zM6 16.5h8v-2.5H6z',
+K:'M10 2.5v4M8 4.5h4M10 7c-4 0-6 3-5 6l1 3.5h8L15 13c1-3-1-6-5-6z'};
+IC.A=IC.B+CIR(10,10,1.5); IC.C=IC.R+CIR(10,11.5,1.5);
+
+let b,turn,sel,over,note,last,paused=false,H=[],cur=0;
+// Пам’ять: 111 місць. У кожному зберігаються ходи партії (localStorage; якщо недоступний — тільки до закриття сторінки)
+const SLOTS=111, mem={}; let slot=1, MV=[];
+const KEY=n=>'c17_'+n;
+const store={get:k=>{try{return localStorage.getItem(k)}catch(_){return mem[k]||null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){mem[k]=v}}};
+const save=()=>{store.set(KEY(slot),JSON.stringify({mv:MV,cur}));store.set('c17_cur',String(slot))};
+const bd=document.getElementById('bd'), wr=document.getElementById('wrap');
+const side=()=>document.getElementById(turn?'w':'k').value;
+const snap=()=>({b:JSON.stringify(b),turn,over,note,last});
+const load=s=>{b=JSON.parse(s.b);turn=s.turn;over=s.over;note=s.note;last=s.last;sel=null};
+
+function init(){
+  b=Array.from({length:N},()=>Array(N).fill(null));
+  for(let c=0;c<N;c++){
+    // від переду до заду: пішаки, фігури, пішаки, фігури, пішаки (5 рядів; 7 пустих між сторонами)
+    for(const r of[0,2,4]){b[r][c]={t:'P',w:0};b[N-1-r][c]={t:'P',w:1}}
+    b[1][c]={t:BACK[c],w:0};b[3][c]={t:SECOND[c],w:0};
+    b[15][c]={t:BACK[c],w:1};b[13][c]={t:SECOND[c],w:1};
+  }
+  turn=1;sel=null;over=false;note='';last=null;H=[snap()];cur=0;MV=[];
+}
+
+function moves(r,c){
+  const p=b[r][c],w=p.w,t=p.t,o=[];
+  const ok=(y,x)=>y>=0&&y<N&&x>=0&&x<N;
+  const slide=ds=>{for(const[dy,dx]of ds){let y=r+dy,x=c+dx;
+    while(ok(y,x)){if(b[y][x]){if(b[y][x].w!=w)o.push([y,x]);break}o.push([y,x]);y+=dy;x+=dx}}};
+  const step=ds=>{for(const[dy,dx]of ds){const y=r+dy,x=c+dx;
+    if(ok(y,x)&&(!b[y][x]||b[y][x].w!=w))o.push([y,x])}};
+  if(t=='P'){
+    const d=w?-1:1;
+    for(let k=1;k<=PAWN_STEPS;k++){const y=r+d*k;if(!ok(y,c)||b[y][c])break;o.push([y,c])}
+    const y=r+d;
+    for(const dx of[-1,1])if(ok(y,c+dx)&&b[y][c+dx]&&b[y][c+dx].w!=w)o.push([y,c+dx]);
+  }
+  if('QRC'.includes(t))slide(ROOK);
+  if('QBA'.includes(t))slide(BISH);
+  if('NAC'.includes(t))step(KNIGHT);
+  if(t=='K')step(KING);
+  return o;
+}
+function all(){const l=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const p=b[r][c];
+    if(p&&p.w==turn)for(const[y,x]of moves(r,c))l.push({r,c,y,x})}
+  return l}
+
+function apply(r,c,y,x){
+  const cap=b[y][x];b[y][x]=b[r][c];b[r][c]=null;
+  const p=b[y][x];if(p.t=='P'&&(y==0||y==N-1))p.t='Q';
+  last=[r,c,y,x];sel=null;
+  if(cap&&cap.t=='K'){over=true;note=(p.w?'Білі':'Чорні')+' виграли: взяли короля'}
+  else if(MV.length>=1000){over=true;note='Нічия: 1000 ходів'}
+  else turn^=1;
+}
+function mv(r,c,y,x){
+  H.length=cur+1;MV.length=cur;
+  apply(r,c,y,x);
+  H.push(snap());MV.push([r,c,y,x]);cur++;save();draw();
+}
+function openSlot(n,fresh){
+  slot=n;init();
+  if(!fresh){
+    try{
+      const d=JSON.parse(store.get(KEY(n))||'null');
+      if(d&&Array.isArray(d.mv)){
+        for(const m of d.mv){if(over)break;apply(...m);H.push(snap());MV.push(m)}
+        cur=Math.min(d.cur|0,H.length-1);load(H[cur]);
+      }
+    }catch(_){init()}
+  }
+  save();draw();
+}
+function go(d){
+  const n=cur+d;if(n<0||n>=H.length)return;
+  cur=n;load(H[cur]);paused=true;
+  document.getElementById('p').textContent='Продовжити';save();draw();
+}
+
+// Рушії: функція (список ходів) => {r,c,y,x}. Сюди можна підключити свій.
+const engines={
+  random:l=>l[Math.random()*l.length|0],
+  greedy:l=>{let best=-1,bs=[];
+    for(const m of l){const t=b[m.y][m.x];
+      const s=(t?VAL[t.t]:0)+(b[m.r][m.c].t=='P'&&(m.y==0||m.y==N-1)?8:0);
+      if(s>best){best=s;bs=[m]}else if(s==best)bs.push(m)}
+    return bs[Math.random()*bs.length|0]}
+};
+// ---- Рушій alphabeta за схемою книги: дерево перебору, мінімакс, метод меж і оцінок (α-β),
+// ---- порядок ходів (взяття цінних фігур першими), форсований варіант (перебір взять), ітеративне поглиблення.
+const INF=1e9, WIN=1e6;
+let nodes=0, deadline=0, aborted=false;
+// Порядок ходів "з середини до країв": стовпці 8, 7, 9, 6, 10, ... 0, 16 (один вліво, один вправо)
+const RK=[]; [8,7,9,6,10,5,11,4,12,3,13,2,14,1,15,0,16].forEach((c,i)=>RK[c]=i);
+let SORTMID=false;
+// Порядок ходів за нападами (ATT) і лічильники
+let ATT=false, CUT=0;
+const CNT=new Array(8).fill(0);
+const CL=['без змін','мала→велика/шах','нова на рівну','більша, ніж була','більше нападів','інша к-сть/вид','інші цілі','взяття/перетв.'];
+// Дошка болів (тестово): PAIN[сторона][клітка] у "пішаках". Поганий хід (втрата >= 1 пішака) лишає біль
+// на клітці ходу (повна втрата, напр. -3) і на клітці відправлення (1%, напр. -0.03).
+// Далі в дереві та сама сторона, ходячи в ці клітки, отримує цей біль у оцінку.
+let PAIN=null, lastPain=null;
+function pain(side,m,v,base,ex){   // ex: оцінка точна, а не межа відсікання
+  const P=PAIN[side], i=m.y*N+m.x, j=m.r*N+m.c, adj=P[i]*100;   // біль, накопичений раніше
+  const loss=(v-base)/100;
+  if(ex&&loss<=-1){if(loss<P[i])P[i]=loss; if(loss*.01<P[j])P[j]=loss*.01}
+  return v+adj;
+}
+// Напади фігури з клітки: клітка -> вартість фігури, яку вона може взяти
+function attackSet(r,c){const m=new Map();for(const[y,x]of moves(r,c)){const t=b[y][x];if(t)m.set(y*N+x,VAL[t.t])}return m}
+const comp=a=>[...a.values()].sort((u,v)=>u-v).join();
+// Клас тихого ходу за зміною нападів фігури, що ходить (A0 до ходу, A1 після). Шах = напад на короля (найбільша "фігура")
+function qclass(pv,A0,A1){
+  let nm=-1;for(const[q,v]of A1)if(!A0.has(q)&&v>nm)nm=v;          // нові напади (раніше не нападала)
+  if(nm>pv)return[3e4+nm*16-pv,1];                                  // мала на велику (шах)
+  if(nm==pv)return[2e4+nm,2];                                       // новий напад на рівну
+  let m0=0,m1=0;for(const v of A0.values())m0=Math.max(m0,v);for(const v of A1.values())m1=Math.max(m1,v);
+  if(m1>m0)return[15e3+m1-m0,3];                                    // напад на більшу, ніж було
+  if(A1.size>A0.size)return[1e4+A1.size-A0.size,4];                 // більше нападів (2 -> 3)
+  if(A1.size!=A0.size||comp(A0)!=comp(A1))return[5e3+A1.size,5];    // інша кількість або вид
+  for(const q of A1.keys())if(!A0.has(q))return[4e3+A1.size,6];     // ті самі кількість і вид, але інші цілі
+  return[0,0];
+}
+function gen(side,caps){
+  const l=[],useA=ATT&&!caps;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const p=b[r][c];if(!p||p.w!=side)continue;
+    const ms=moves(r,c);let A0=null;
+    if(useA){A0=new Map();for(const[y,x]of ms){const t=b[y][x];if(t)A0.set(y*N+x,VAL[t.t])}}
+    for(const[y,x]of ms){
+      const t=b[y][x];if(caps&&!t)continue;
+      const m={r,c,y,x,s:0},promo=p.t=='P'&&(y==0||y==N-1);
+      if(useA){
+        if(t){m.s=1e5+VAL[t.t]*16-VAL[p.t];CNT[7]++}               // спершу взяття
+        else if(promo){m.s=5e4;CNT[7]++}
+        else{make(m);const A1=attackSet(y,x);unmake(m);const[sc,k]=qclass(VAL[p.t],A0,A1);m.s=sc;CNT[k]++}
+      }else m.s=t?VAL[t.t]*16-VAL[p.t]:(promo?500:0);
+      l.push(m);
+    }
+  }
+  l.sort((u,v)=>v.s-u.s||(SORTMID?RK[u.c]-RK[v.c]||RK[u.x]-RK[v.x]:0));return l;
+}
+function make(m){const p=b[m.r][m.c];m.cap=b[m.y][m.x];m.pt=p.t;b[m.y][m.x]=p;b[m.r][m.c]=null;if(p.t=='P'&&(m.y==0||m.y==N-1))p.t='Q'}
+function unmake(m){const p=b[m.y][m.x];p.t=m.pt;b[m.r][m.c]=p;b[m.y][m.x]=m.cap}
+// Оціночна функція: матеріал + просування пішаків + близькість фігур до центру
+function ev(side){
+  let s=0;
+  for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];if(!p)continue;
+    let v=VAL[p.t]*100;
+    if(p.t=='P')v+=(p.w?N-1-r:r)*2;
+    else if(p.t!='K')v+=8-Math.abs(r-8)*.5-Math.abs(c-8)*.5;
+    s+=p.w?v:-v}}
+  return side?s:-s;
+}
+function stop(){if(++nodes%256==0&&Date.now()>deadline)aborted=true;return aborted}
+function qs(side,al,be,d){            // форсований варіант: тільки взяття
+  if(stop())return 0;
+  const st=ev(side);
+  if(d==0||st>=be)return st;
+  if(st>al)al=st;
+  for(const m of gen(side,true)){
+    if(b[m.y][m.x].t=='K')return WIN;
+    make(m);const v=-qs(side^1,-be,-al,d-1);unmake(m);
+    if(aborted)return 0;
+    if(v>=be){CUT++;return v}
+    if(v>al)al=v;
+  }
+  return al;
+}
+function ab(side,d,al,be,ply){        // метод меж і оцінок
+  if(d==0)return qs(side,al,be,4);
+  if(stop())return 0;
+  const l=gen(side,false);
+  if(!l.length)return 0;
+  let best=-INF;
+  const base=PAIN?ev(side):0;
+  for(const m of l){
+    if(b[m.y][m.x]&&b[m.y][m.x].t=='K')return WIN-ply;
+    make(m);let v=(PAIN&&d==1)?-qs(side^1,-INF,INF,4):-ab(side^1,d-1,-be,-al,ply+1);unmake(m);   // в останньому плані оцінка точна
+    if(aborted)return 0;
+    if(PAIN)v=pain(side,m,v,base,d==1||(v>al&&v<be));
+    if(v>best)best=v;
+    if(best>al)al=best;
+    if(al>=be){CUT++;break}
+  }
+  return best;
+}
+function runAB(name,mid,pains,att){
+  SORTMID=mid;PAIN=pains?[new Float32Array(N*N),new Float32Array(N*N)]:null;
+  ATT=att||document.getElementById('ao').checked;CNT.fill(0);CUT=0;const t0=Date.now();let doneD=0,score=0;
+  const side=turn,D=+document.getElementById('dp').value||2,T=(+document.getElementById('tm').value||3)*1000;
+  const root=gen(side,false), base0=PAIN?ev(side):0;
+  let best=root[0];
+  nodes=0;aborted=false;deadline=Date.now()+T;
+  for(let d=1;d<=D;d++){
+    let al=-INF,bm=null;
+    for(const m of root){
+      let v;
+      if(b[m.y][m.x]&&b[m.y][m.x].t=='K')v=WIN;
+      else{make(m);v=(PAIN&&d==1)?-qs(side^1,-INF,INF,4):-ab(side^1,d-1,-INF,-al,1);unmake(m)}
+      if(aborted)break;
+      if(PAIN&&v<WIN-100)v=pain(side,m,v,base0,d==1||bm===null||v>al);
+      if(bm===null||v>al){al=v;bm=m}
+    }
+    if(aborted)break;
+    best=bm;doneD=d;score=al;
+    root.splice(root.indexOf(bm),1);root.unshift(bm);   // найкращий хід першим на наступній глибині
+    if(al>WIN-100)break;
+  }
+  // Лічильники в меню
+  const f=n=>n.toLocaleString('uk');
+  let t=`${name} · глибина ${doneD}/${D} · вузлів ${f(nodes)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(score/100).toFixed(2)}`;
+  if(ATT)t+=' · ходи: '+CL.map((n,i)=>CNT[i]?n+' '+f(CNT[i]):'').filter(Boolean).join(', ');
+  if(PAIN){let n=0,sum=0;for(const P of PAIN)for(const v of P)if(v<0){n++;sum+=v}t+=` · болів: ${n} кліток, сума ${sum.toFixed(2)}`}
+  document.getElementById('cnt').textContent=t;
+  lastPain=PAIN;PAIN=null;SORTMID=false;ATT=false;
+  return best;
+}
+const NM=['alphabeta','alphabeta takes check small on big or new attacks','alphabeta middletosides sort','test pains board alphabeta'];
+engines[NM[0]]=()=>runAB(NM[0],false,false,false);
+engines[NM[1]]=()=>runAB(NM[1],false,false,true);     // простий alphabeta, порядок за нападами завжди
+engines[NM[2]]=()=>runAB(NM[2],true,false,false);
+engines[NM[3]]=()=>runAB(NM[3],false,true,false);
+
+let timer;
+function tick(){
+  clearTimeout(timer);
+  if(over||paused)return;
+  const e=side();if(e=='human')return;
+  timer=setTimeout(()=>{
+    const run=()=>{
+      if(over||paused||side()!=e)return;
+      const l=all();
+      if(!l.length){over=true;note='Немає ходів';draw();return}
+      const m=engines[e](l);mv(m.r,m.c,m.y,m.x);
+    };
+    if(e.includes('alphabeta')){document.getElementById('msg').textContent='Рушій думає…';setTimeout(run,40)}else run();
+  },180);
+}
+
+function click(r,c){
+  if(over||side()!='human')return;
+  if(sel&&sel.m.some(m=>m[0]==r&&m[1]==c)){mv(sel.r,sel.c,r,c);return}
+  const p=b[r][c];
+  sel=(p&&p.w==turn)?{r,c,m:moves(r,c)}:null;draw();
+}
+// Ручне перетягування дошки пальцем/мишею + тап для ходу
+const tap=e=>{
+  const sv=bd.querySelector('svg');if(!sv)return;
+  const q=sv.getBoundingClientRect(),c=Math.floor((e.clientX-q.left)/CELL),r=Math.floor((e.clientY-q.top)/CELL);
+  if(r>=0&&c>=0&&r<N&&c<N)click(r,c);
+};
+let drag=null;
+wr.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,sl:wr.scrollLeft,st:wr.scrollTop,moved:false};try{wr.setPointerCapture(e.pointerId)}catch(_){}});
+wr.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(Math.abs(dx)+Math.abs(dy)>8)drag.moved=true;
+  if(drag.moved){wr.scrollLeft=drag.sl-dx;wr.scrollTop=drag.st-dy}
+});
+wr.addEventListener('pointerup',e=>{if(drag&&!drag.moved)tap(e);drag=null});
+wr.addEventListener('pointercancel',()=>{drag=null});
+
+function draw(){
+  const S=N*CELL,m=CELL/2;
+  const mk=(id,col)=>`<marker id="${id}" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0 .5L6 3L0 5.5z" fill="${col}"/></marker>`;
+  let h=`<svg width="${S}" height="${S}" style="display:block"><defs>${mk('mg','#1b8a3a')}${mk('mr','#d32f2f')}${mk('mo','#ff9800')}</defs>`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)
+    h+=`<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}" fill="${(r+c)%2?'#f2d230':'#d6d6d6'}"/>`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const p=b[r][c];if(!p)continue;
+    h+=`<g transform="translate(${c*CELL+CELL*.1} ${r*CELL+CELL*.1}) scale(${CELL*.8/20})" fill="${p.w?'#e53935':'#1e5fe0'}" stroke="#000" stroke-width="1"><path d="${IC[p.t]}" vector-effect="non-scaling-stroke"/></g>`}
+  const L=(r,c,y,x,col,k)=>`<line x1="${c*CELL+m}" y1="${r*CELL+m}" x2="${x*CELL+m}" y2="${y*CELL+m}" stroke="${col}" stroke-width="1" opacity=".8" marker-end="url(#${k})"/>`;
+  // стрілки: усі ходи всіх фігур того, хто ходить
+  if(!over&&document.getElementById('ar').checked)
+    for(const a of all()){const cp=b[a.y][a.x];h+=L(a.r,a.c,a.y,a.x,cp?'#d32f2f':'#1b8a3a',cp?'mr':'mg')}
+  if(last)for(const[r,c]of[[last[0],last[1]],[last[2],last[3]]])
+    h+=`<rect x="${c*CELL+.5}" y="${r*CELL+.5}" width="${CELL-1}" height="${CELL-1}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+  if(last)h+=L(...last,'#ff9800','mo');
+  if(sel){
+    h+=`<rect x="${sel.c*CELL+.5}" y="${sel.r*CELL+.5}" width="${CELL-1}" height="${CELL-1}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+    for(const[y,x]of sel.m)h+=`<rect x="${x*CELL+3}" y="${y*CELL+3}" width="${CELL-6}" height="${CELL-6}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+  }
+  h+='</svg>';
+  const sl=wr.scrollLeft,st=wr.scrollTop;bd.style.padding=wr.clientHeight+'px '+wr.clientWidth+'px';bd.innerHTML=h;wr.scrollLeft=sl;wr.scrollTop=st;
+  const status=over?note:(turn?'Хід білих':'Хід чорних')+' · хід №'+(cur+1);
+  document.getElementById('msg').textContent=`Пам’ять ${slot} з ${SLOTS} · ${status}`;
+  tick();
+}
+document.getElementById('u').onclick=()=>go(-1);
+document.getElementById('f').onclick=()=>go(1);
+const fit=()=>{CELL=Math.max(14,Math.floor((Math.min(wr.clientWidth,wr.clientHeight)-16)/N))};
+const center=()=>{wr.scrollLeft=wr.clientWidth-(wr.clientWidth-N*CELL)/2;wr.scrollTop=wr.clientHeight-(wr.clientHeight-N*CELL)/2};
+const zoom=d=>{CELL=Math.max(14,Math.min(90,CELL+d));draw()};
+document.getElementById('zm').onclick=()=>zoom(-6);
+document.getElementById('zp').onclick=()=>zoom(6);
+document.getElementById('fit').onclick=()=>{fit();draw();center()};
+document.getElementById('ar').onchange=draw;
+document.getElementById('n').onclick=()=>openSlot(slot%SLOTS+1,true);
+document.getElementById('p').onclick=e=>{paused=!paused;e.target.textContent=paused?'Продовжити':'Пауза';tick()};
+document.getElementById('w').onchange=document.getElementById('k').onchange=tick;
+// Вибір місця пам’яті: три цифри
+const kp=document.getElementById('kp'),kd=document.getElementById('kd');let kv='';
+const kshow=t=>{kd.textContent=t||kv||'—'};
+[...'123456789','⌫','0','OK'].forEach(k=>{
+  const e=document.createElement('button');e.textContent=k;
+  e.onclick=()=>{
+    if(k=='OK'){const n=parseInt(kv,10);if(n>=1&&n<=SLOTS){kp.hidden=true;openSlot(n,false)}else kshow('введи 1–'+SLOTS);return}
+    if(k=='⌫')kv=kv.slice(0,-1);else if(kv.length<3)kv+=k;
+    kshow();
+  };
+  document.getElementById('kg').append(e);
+});
+document.getElementById('m').onclick=()=>{kv='';kshow();kp.style.left='50%';kp.style.top='50%';kp.style.transform='translate(-50%,-50%)';kp.hidden=false};
+// Клавіатуру можна тягнути куди завгодно, навіть повністю за край екрана
+let kdrag=null,kmoved=false;
+kp.style.touchAction='none';
+kp.addEventListener('pointerdown',e=>{const q=kp.getBoundingClientRect();kdrag={x:e.clientX,y:e.clientY,l:q.left,t:q.top,id:e.pointerId,cap:false};kmoved=false});
+kp.addEventListener('pointermove',e=>{
+  if(!kdrag)return;
+  const dx=e.clientX-kdrag.x,dy=e.clientY-kdrag.y;
+  if(!kmoved&&Math.abs(dx)+Math.abs(dy)>8){kmoved=true;try{kp.setPointerCapture(kdrag.id)}catch(_){}}
+  if(kmoved){kp.style.transform='none';kp.style.left=(kdrag.l+dx)+'px';kp.style.top=(kdrag.t+dy)+'px'}
+});
+kp.addEventListener('pointerup',()=>{kdrag=null});
+kp.addEventListener('pointercancel',()=>{kdrag=null});
+kp.addEventListener('click',e=>{if(kmoved){e.stopPropagation();e.preventDefault();kmoved=false}},true);
+document.getElementById('kx').onclick=()=>{kp.hidden=true};
+fit();openSlot(Number(store.get('c17_cur'))||1,false);center();
+</script></body></html>
