@@ -1,0 +1,2174 @@
+         <!doctype html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Шахи 17×17</title>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:#1d2321;color:#e9e4d6;font-family:system-ui,sans-serif}
+#bar{flex:none;padding:4px;text-align:center;font-size:14px}
+#bar select,#bar button{font-size:14px;margin:2px;padding:4px 8px}
+#cnt{flex:none;text-align:center;font-size:12px;color:#b9c4bf;padding:0 6px 2px}
+#msg{flex:none;text-align:center;font-weight:600;font-size:14px;padding:2px}
+#wrap{flex:1;min-height:0;overflow:auto;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+#bd{display:inline-block}
+#kp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#2b3330;border:1px solid #889;border-radius:6px;padding:10px;z-index:9;text-align:center}
+#kp[hidden]{display:none}
+#kd{font-size:28px;min-height:36px;margin:4px 0}
+#kg{display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+#kg button{font-size:22px;padding:12px 0}
+#wi,#ki{color:#ffb74d;font-size:11px;display:inline-block;min-width:110px;text-align:left}
+</style></head><body>
+<div id="bar">Білі <select id="w">
+<option selected>human</option>
+<option>alphabeta deepseek hybrid</option>
+<option>alphabeta deepseek eval</option>
+<option>alphabeta deepseek singular</option>
+<option>alphabeta deepseek probcut</option>
+<option>speedspec261116time</option>
+<option>specialeval261116time</option>
+<option>alphabeta deepseek full</option>
+<option>alphabeta deepseek aggressive</option>
+<option>alphabeta deepseek mate 3</option>
+<option>alphabeta deepseek asp nullmove</option>
+<option>alphabeta deepseek</option>
+<option>alphabeta takes check small on big or new attacks</option>
+<option>alphabeta middletosides sort</option>
+<option>alphabeta deepseek mate 2</option>
+<option>test pains board alphabeta</option>
+<option>alphabeta</option>
+<option disabled>─── повільні (150с+) ───</option>
+<option>alphabeta deepseek mate 4+</option>
+<option>speedmate261116time</option>
+<option>mcts puct deepseek</option>
+<option>mcts rave tree deepseek</option>
+<option>mcts rave deepseek</option>
+<option>mcts eval deepseek</option>
+<option>mcts deepseek</option>
+<option disabled>─── прості ───</option>
+<option>greedy</option>
+<option>random</option>
+</select> <span id="wi"></span>
+Чорні <select id="k">
+<option selected>human</option>
+<option>alphabeta deepseek hybrid</option>
+<option>alphabeta deepseek eval</option>
+<option>alphabeta deepseek singular</option>
+<option>alphabeta deepseek probcut</option>
+<option>speedspec261116time</option>
+<option>specialeval261116time</option>
+<option>alphabeta deepseek full</option>
+<option>alphabeta deepseek aggressive</option>
+<option>alphabeta deepseek mate 3</option>
+<option>alphabeta deepseek asp nullmove</option>
+<option>alphabeta deepseek</option>
+<option>alphabeta takes check small on big or new attacks</option>
+<option>alphabeta middletosides sort</option>
+<option>alphabeta deepseek mate 2</option>
+<option>test pains board alphabeta</option>
+<option>alphabeta</option>
+<option disabled>─── повільні (150с+) ───</option>
+<option>alphabeta deepseek mate 4+</option>
+<option>speedmate261116time</option>
+<option>mcts puct deepseek</option>
+<option>mcts rave tree deepseek</option>
+<option>mcts rave deepseek</option>
+<option>mcts eval deepseek</option>
+<option>mcts deepseek</option>
+<option disabled>─── прості ───</option>
+<option>greedy</option>
+<option>random</option>
+</select> <span id="ki"></span>
+глибина <select id="dp">
+<option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option><option>32</option><option>33</option><option>34</option><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option>42</option><option>43</option><option>44</option>
+</select>
+сек <select id="tm">
+<option>1</option><option selected>3</option><option>10</option><option>15</option><option>20</option><option>26</option><option>31</option><option>36</option><option>41</option><option>46</option><option>60</option><option>90</option><option>120</option><option>150</option>
+</select>
+<label title="взяття, шах, мала на велику, нові напади"><input type="checkbox" id="ao"> порядок за нападами</label><br>
+<button id="u">◀ назад</button><button id="f">вперед ▶</button><button id="m">Пам’ять</button><button id="n">Нова гра</button><button id="p">Пауза</button><br><button id="zm">−</button><button id="zp">+</button><button id="fit">⊡ вписати</button><label><input type="checkbox" id="ar" checked> стрілки</label></div>
+<div id="msg"></div>
+<div id="cnt"></div>
+<div id="kp" hidden><div>Пам’ять 1–111 · тягни, щоб посунути</div><div id="kd">—</div><div id="kg"></div><button id="kx" style="margin-top:8px;font-size:16px">Скасувати</button></div>
+<div id="wrap"><div id="bd"></div></div>
+<script>
+const N=17, PAWN_STEPS=5; let CELL=44;
+const BACK="RNBANBCQKQCBNABNR", SECOND="BNRCAQBRNRBQACRNB";
+const VAL={P:1,N:3,B:3,R:5,A:7,C:8,Q:9,K:100};
+const ROOK=[[1,0],[-1,0],[0,1],[0,-1]], BISH=[[1,1],[1,-1],[-1,1],[-1,-1]];
+const KNIGHT=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]], KING=ROOK.concat(BISH);
+const CIR=(x,y,r)=>`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0`;
+const IC={
+P:CIR(10,6,2.5)+'M6 16.5c0-4 1.5-5.5 4-5.5s4 1.5 4 5.5z',
+R:'M5 16.5h10v-2H5zM6 14.5V8.5h8v6M5 8.5V4.5h2v1.5h2V4.5h2v1.5h2V4.5h2v4z',
+N:'M5 16.5V14c0-4 1-7 5-10l1 2c3 1 4 4 4 8v2.5z'+CIR(9,8,.6),
+B:CIR(10,3.5,1)+'M10 5c-3 2-4 5-2 8h4c2-3 1-6-2-8zM6 16.5h8l-1.5-3.5h-5z',
+Q:'M4 6l2 8h8l2-8-3.5 4L10 4.5 7.5 10zM6 16.5h8v-2.5H6z',
+K:'M10 2.5v4M8 4.5h4M10 7c-4 0-6 3-5 6l1 3.5h8L15 13c1-3-1-6-5-6z'};
+IC.A=IC.B; IC.C=IC.R;
+
+const EINFO = {
+  'human':'',
+  'alphabeta deepseek hybrid':'~1650 · ~100с',
+  'alphabeta deepseek eval':'~1600 · ~45с',
+  'alphabeta deepseek singular':'~1570 · ~30с',
+  'alphabeta deepseek probcut':'~1490 · ~17с',
+  'speedspec261116time':'~1480 · ~14с',
+  'specialeval261116time':'~1450 · ~30с',
+  'alphabeta deepseek full':'~1420 · ~15с',
+  'alphabeta deepseek aggressive':'~1400 · ~22с',
+  'alphabeta deepseek mate 3':'~1350 · ~30с',
+  'alphabeta deepseek asp nullmove':'~1320 · ~15с',
+  'alphabeta deepseek':'~1170 · ~10с',
+  'alphabeta takes check small on big or new attacks':'~1050 · ~5с',
+  'alphabeta middletosides sort':'~980 · ~5с',
+  'alphabeta deepseek mate 2':'~950 · ~5с',
+  'test pains board alphabeta':'~920 · ~5с',
+  'alphabeta':'~880 · ~3с',
+  'alphabeta deepseek mate 4+':'~1550 · 150с (пов.)',
+  'speedmate261116time':'~1520 · ~75с',
+  'mcts puct deepseek':'~850 · ~115с',
+  'mcts rave tree deepseek':'~820 · ~90с',
+  'mcts rave deepseek':'~800 · ~65с',
+  'mcts eval deepseek':'~770 · ~50с',
+  'mcts deepseek':'~740 · ~42с',
+  'greedy':'~400 · <1с',
+  'random':'~200 · <1с'
+};
+function updInfo(){
+  document.getElementById('wi').textContent = EINFO[document.getElementById('w').value] || '';
+  document.getElementById('ki').textContent = EINFO[document.getElementById('k').value] || '';
+}
+
+let b,turn,sel,over,note,last,paused=false,H=[],cur=0;
+const SLOTS=111, mem={}; let slot=1, MV=[];
+const KEY=n=>'c17_'+n;
+const store={get:k=>{try{return localStorage.getItem(k)}catch(_){return mem[k]||null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){mem[k]=v}}};
+const save=()=>{store.set(KEY(slot),JSON.stringify({mv:MV,cur}));store.set('c17_cur',String(slot))};
+const bd=document.getElementById('bd'), wr=document.getElementById('wrap');
+const side=()=>document.getElementById(turn?'w':'k').value;
+const snap=()=>({b:JSON.stringify(b),turn,over,note,last});
+const load=s=>{b=JSON.parse(s.b);turn=s.turn;over=s.over;note=s.note;last=s.last;sel=null};
+
+function init(){
+  b=Array.from({length:N},()=>Array(N).fill(null));
+  for(let c=0;c<N;c++){
+    for(const r of[0,2,4]){b[r][c]={t:'P',w:0};b[N-1-r][c]={t:'P',w:1}}
+    b[1][c]={t:BACK[c],w:0};b[3][c]={t:SECOND[c],w:0};
+    b[15][c]={t:BACK[c],w:1};b[13][c]={t:SECOND[c],w:1};
+  }
+  turn=1;sel=null;over=false;note='';last=null;H=[snap()];cur=0;MV=[];
+}
+
+function moves(r,c){
+  const p=b[r][c],w=p.w,t=p.t,o=[];
+  const ok=(y,x)=>y>=0&&y<N&&x>=0&&x<N;
+  const slide=ds=>{for(const[dy,dx]of ds){let y=r+dy,x=c+dx;
+    while(ok(y,x)){if(b[y][x]){if(b[y][x].w!=w)o.push([y,x]);break}o.push([y,x]);y+=dy;x+=dx}}};
+  const step=ds=>{for(const[dy,dx]of ds){const y=r+dy,x=c+dx;
+    if(ok(y,x)&&(!b[y][x]||b[y][x].w!=w))o.push([y,x])}};
+  if(t=='P'){
+    const d=w?-1:1;
+    for(let k=1;k<=PAWN_STEPS;k++){const y=r+d*k;if(!ok(y,c)||b[y][c])break;o.push([y,c])}
+    const y=r+d;
+    for(const dx of[-1,1])if(ok(y,c+dx)&&b[y][c+dx]&&b[y][c+dx].w!=w)o.push([y,c+dx]);
+  }
+  if('QRC'.includes(t))slide(ROOK);
+  if('QBA'.includes(t))slide(BISH);
+  if('NAC'.includes(t))step(KNIGHT);
+  if(t=='K')step(KING);
+  return o;
+}
+function all(){const l=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const p=b[r][c];
+    if(p&&p.w==turn)for(const[y,x]of moves(r,c))l.push({r,c,y,x})}
+  return l}
+
+function apply(r,c,y,x){
+  const cap=b[y][x];b[y][x]=b[r][c];b[r][c]=null;
+  const p=b[y][x];if(p.t=='P'&&(y==0||y==N-1))p.t='Q';
+  last=[r,c,y,x];sel=null;
+  if(cap&&cap.t=='K'){over=true;note=(p.w?'Білі':'Чорні')+' виграли: взяли короля'}
+  else if(MV.length>=1000){over=true;note='Нічия: 1000 ходів'}
+  else turn^=1;
+}
+function mv(r,c,y,x){
+  H.length=cur+1;MV.length=cur;
+  apply(r,c,y,x);
+  H.push(snap());MV.push([r,c,y,x]);cur++;save();draw();
+}
+function openSlot(n,fresh){
+  slot=n;init();
+  if(!fresh){
+    try{
+      const d=JSON.parse(store.get(KEY(n))||'null');
+      if(d&&Array.isArray(d.mv)){
+        for(const m of d.mv){if(over)break;apply(...m);H.push(snap());MV.push(m)}
+        cur=Math.min(d.cur|0,H.length-1);load(H[cur]);
+      }
+    }catch(_){init()}
+  }
+  save();draw();
+}
+function go(d){
+  const n=cur+d;if(n<0||n>=H.length)return;
+  cur=n;load(H[cur]);paused=true;
+  document.getElementById('p').textContent='Продовжити';save();draw();
+}
+
+const engines={
+  random:l=>l[Math.random()*l.length|0],
+  greedy:l=>{let best=-1,bs=[];
+    for(const m of l){const t=b[m.y][m.x];
+      const s=(t?VAL[t.t]:0)+(b[m.r][m.c].t=='P'&&(m.y==0||m.y==N-1)?8:0);
+      if(s>best){best=s;bs=[m]}else if(s==best)bs.push(m)}
+    return bs[Math.random()*bs.length|0]}
+};
+
+const INF=1e9, WIN=1e6;
+let nodes=0, deadline=0, aborted=false;
+const RK=[]; [8,7,9,6,10,5,11,4,12,3,13,2,14,1,15,0,16].forEach((c,i)=>RK[c]=i);
+let SORTMID=false;
+let ATT=false, CUT=0;
+const CNT=new Array(8).fill(0);
+const CL=['без змін','мала→велика/шах','нова на рівну','більша, ніж була','більше нападів','інша к-сть/вид','інші цілі','взяття/перетв.'];
+let PAIN=null, lastPain=null;
+function pain(side,m,v,base,ex){
+  const P=PAIN[side], i=m.y*N+m.x, j=m.r*N+m.c, adj=P[i]*100;
+  const loss=(v-base)/100;
+  if(ex&&loss<=-1){if(loss<P[i])P[i]=loss; if(loss*.01<P[j])P[j]=loss*.01}
+  return v+adj;
+}
+function attackSet(r,c){const m=new Map();for(const[y,x]of moves(r,c)){const t=b[y][x];if(t)m.set(y*N+x,VAL[t.t])}return m}
+const comp=a=>[...a.values()].sort((u,v)=>u-v).join();
+function qclass(pv,A0,A1){
+  let nm=-1;for(const[q,v]of A1)if(!A0.has(q)&&v>nm)nm=v;
+  if(nm>pv)return[3e4+nm*16-pv,1];
+  if(nm==pv)return[2e4+nm,2];
+  let m0=0,m1=0;for(const v of A0.values())m0=Math.max(m0,v);for(const v of A1.values())m1=Math.max(m1,v);
+  if(m1>m0)return[15e3+m1-m0,3];
+  if(A1.size>A0.size)return[1e4+A1.size-A0.size,4];
+  if(A1.size!=A0.size||comp(A0)!=comp(A1))return[5e3+A1.size,5];
+  for(const q of A1.keys())if(!A0.has(q))return[4e3+A1.size,6];
+  return[0,0];
+}
+function gen(side,caps){
+  const l=[],useA=ATT&&!caps;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const p=b[r][c];if(!p||p.w!=side)continue;
+    const ms=moves(r,c);let A0=null;
+    if(useA){A0=new Map();for(const[y,x]of ms){const t=b[y][x];if(t)A0.set(y*N+x,VAL[t.t])}}
+    for(const[y,x]of ms){
+      const t=b[y][x];if(caps&&!t)continue;
+      const m={r,c,y,x,s:0},promo=p.t=='P'&&(y==0||y==N-1);
+      if(useA){
+        if(t){m.s=1e5+VAL[t.t]*16-VAL[p.t];CNT[7]++}
+        else if(promo){m.s=5e4;CNT[7]++}
+        else{make(m);const A1=attackSet(y,x);unmake(m);const[sc,k]=qclass(VAL[p.t],A0,A1);m.s=sc;CNT[k]++}
+      }else m.s=t?VAL[t.t]*16-VAL[p.t]:(promo?500:0);
+      l.push(m);
+    }
+  }
+  l.sort((u,v)=>v.s-u.s||(SORTMID?RK[u.c]-RK[v.c]||RK[u.x]-RK[v.x]:0));return l;
+}
+function make(m){const p=b[m.r][m.c];m.cap=b[m.y][m.x];m.pt=p.t;b[m.y][m.x]=p;b[m.r][m.c]=null;if(p.t=='P'&&(m.y==0||m.y==N-1))p.t='Q'}
+function unmake(m){const p=b[m.y][m.x];p.t=m.pt;b[m.r][m.c]=p;b[m.y][m.x]=m.cap}
+function ev(side){
+  let s=0;
+  for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];if(!p)continue;
+    let v=VAL[p.t]*100;
+    if(p.t=='P')v+=(p.w?N-1-r:r)*2;
+    else if(p.t!='K')v+=8-Math.abs(r-8)*.5-Math.abs(c-8)*.5;
+    s+=p.w?v:-v}}
+  return side?s:-s;
+}
+function stop(){if(++nodes%256==0&&Date.now()>deadline)aborted=true;return aborted}
+function qs(side,al,be,d){
+  if(stop())return 0;
+  const st=ev(side);
+  if(d==0||st>=be)return st;
+  if(st>al)al=st;
+  for(const m of gen(side,true)){
+    if(b[m.y][m.x].t=='K')return WIN;
+    make(m);const v=-qs(side^1,-be,-al,d-1);unmake(m);
+    if(aborted)return 0;
+    if(v>=be){CUT++;return v}
+    if(v>al)al=v;
+  }
+  return al;
+}
+function ab(side,d,al,be,ply){
+  if(d==0)return qs(side,al,be,4);
+  if(stop())return 0;
+  const l=gen(side,false);
+  if(!l.length)return 0;
+  let best=-INF;
+  const base=PAIN?ev(side):0;
+  for(const m of l){
+    if(b[m.y][m.x]&&b[m.y][m.x].t=='K')return WIN-ply;
+    make(m);let v=(PAIN&&d==1)?-qs(side^1,-INF,INF,4):-ab(side^1,d-1,-be,-al,ply+1);unmake(m);
+    if(aborted)return 0;
+    if(PAIN)v=pain(side,m,v,base,d==1||(v>al&&v<be));
+    if(v>best)best=v;
+    if(best>al)al=best;
+    if(al>=be){CUT++;break}
+  }
+  return best;
+}
+function runAB(name,mid,pains,att){
+  SORTMID=mid;PAIN=pains?[new Float32Array(N*N),new Float32Array(N*N)]:null;
+  ATT=att||document.getElementById('ao').checked;CNT.fill(0);CUT=0;const t0=Date.now();let doneD=0,score=0;
+  const side=turn,D=+document.getElementById('dp').value||2,T=(+document.getElementById('tm').value||3)*1000;
+  const root=gen(side,false), base0=PAIN?ev(side):0;
+  let best=root[0];
+  nodes=0;aborted=false;deadline=Date.now()+T;
+  for(let d=1;d<=D;d++){
+    let al=-INF,bm=null;
+    for(const m of root){
+      let v;
+      if(b[m.y][m.x]&&b[m.y][m.x].t=='K')v=WIN;
+      else{make(m);v=(PAIN&&d==1)?-qs(side^1,-INF,INF,4):-ab(side^1,d-1,-INF,-al,1);unmake(m)}
+      if(aborted)break;
+      if(PAIN&&v<WIN-100)v=pain(side,m,v,base0,d==1||bm===null||v>al);
+      if(bm===null||v>al){al=v;bm=m}
+    }
+    if(aborted)break;
+    best=bm;doneD=d;score=al;
+    root.splice(root.indexOf(bm),1);root.unshift(bm);
+    if(al>WIN-100)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`${name} · глибина ${doneD}/${D} · вузлів ${f(nodes)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(score/100).toFixed(2)}`;
+  if(ATT)t+=' · ходи: '+CL.map((n,i)=>CNT[i]?n+' '+f(CNT[i]):'').filter(Boolean).join(', ');
+  if(PAIN){let n=0,sum=0;for(const P of PAIN)for(const v of P)if(v<0){n++;sum+=v}t+=` · болів: ${n} кліток, сума ${sum.toFixed(2)}`}
+  document.getElementById('cnt').textContent=t;
+  lastPain=PAIN;PAIN=null;SORTMID=false;ATT=false;
+  return best;
+}
+const NM=['alphabeta','alphabeta takes check small on big or new attacks','alphabeta middletosides sort','test pains board alphabeta'];
+engines[NM[0]]=()=>runAB(NM[0],false,false,false);
+engines[NM[1]]=()=>runAB(NM[1],false,false,true);
+engines[NM[2]]=()=>runAB(NM[2],true,false,false);
+engines[NM[3]]=()=>runAB(NM[3],false,true,false);
+
+const TYPES_DS='PNBRACQK';
+const ZOB_R=[]; (function(){const rnd=()=>(Math.random()*0x100000000)|0;
+  for(let r=0;r<N;r++){ZOB_R[r]=[];for(let c=0;c<N;c++){ZOB_R[r][c]=[];
+    for(let t=0;t<8;t++)ZOB_R[r][c][t]=[rnd(),rnd()];}}})();
+const ZOB_SIDE=[(Math.random()*0x100000000)|0];
+
+function hashBoard(side){let h=0;
+  for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];if(!p)continue;
+    h^=ZOB_R[r][c][TYPES_DS.indexOf(p.t)][p.w];}}
+  if(side)h^=ZOB_SIDE[0]; return h|0;}
+
+function attackedBy(side,r,c){
+  for(let i=0;i<8;i++){const y=r+KNIGHT[i][0],x=c+KNIGHT[i][1];
+    if(y>=0&&y<N&&x>=0&&x<N){const p=b[y][x];
+      if(p&&p.w===side&&(p.t==='N'||p.t==='A'||p.t==='C'))return true;}}
+  for(let i=0;i<8;i++){const y=r+KING[i][0],x=c+KING[i][1];
+    if(y>=0&&y<N&&x>=0&&x<N){const p=b[y][x];
+      if(p&&p.w===side&&p.t==='K')return true;}}
+  const py=side===0?r-1:r+1;
+  if(py>=0&&py<N)for(const dx of[-1,1]){const px=c+dx;
+    if(px>=0&&px<N){const p=b[py][px];
+      if(p&&p.w===side&&p.t==='P')return true;}}
+  for(let i=0;i<4;i++){let y=r+ROOK[i][0],x=c+ROOK[i][1];
+    while(y>=0&&y<N&&x>=0&&x<N){const p=b[y][x];
+      if(p){if(p.w===side&&(p.t==='R'||p.t==='Q'||p.t==='C'))return true;break;}
+      y+=ROOK[i][0];x+=ROOK[i][1];}}
+  for(let i=0;i<4;i++){let y=r+BISH[i][0],x=c+BISH[i][1];
+    while(y>=0&&y<N&&x>=0&&x<N){const p=b[y][x];
+      if(p){if(p.w===side&&(p.t==='B'||p.t==='Q'||p.t==='A'))return true;break;}
+      y+=BISH[i][0];x+=BISH[i][1];}}
+  return false;}
+
+function isInCheckDS(side){
+  for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];
+    if(p&&p.w===side&&p.t==='K')return attackedBy(side^1,r,c);}}
+  return false;}
+
+let DS_TT,DS_KILLERS,DS_HISTORY,DS_NODES,DS_DEADLINE,DS_ABORTED;
+const FLAG_EXACT=0,FLAG_LOWER=1,FLAG_UPPER=2,DS_TT_MAX=400000;
+
+function dsTimeUp(){
+  if((++DS_NODES&1023)===0&&Date.now()>DS_DEADLINE)DS_ABORTED=true;
+  return DS_ABORTED;}
+
+function sameMove(a,o){return a&&o&&a.r===o.r&&a.c===o.c&&a.y===o.y&&a.x===o.x;}
+
+function dsOrder(l,ttMove,ply){
+  const kk=DS_KILLERS[ply<512?ply:511];
+  for(const m of l){
+    let s=m.s||0;
+    if(sameMove(m,ttMove))s+=1e8;
+    else if(kk[0]&&sameMove(m,kk[0]))s+=5e7;
+    else if(kk[1]&&sameMove(m,kk[1]))s+=4e7;
+    if(!b[m.y][m.x]){
+      const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+      s+=(DS_HISTORY.get(hk)||0);
+    }
+    m.s=s;}
+  l.sort((a,b)=>b.s-a.s); return l;}
+
+function dsQSearch(side,al,be,ply){
+  if(dsTimeUp())return 0;
+  const st=ev(side);
+  if(st>=be)return st;
+  if(st>al)al=st;
+  const l=gen(side,true);
+  dsOrder(l,null,ply);
+  for(const m of l){
+    const cap=b[m.y][m.x];
+    if(cap&&cap.t==='K')return WIN-ply;
+    make(m);const v=-dsQSearch(side^1,-be,-al,ply+1);unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>=be)return v;
+    if(v>al)al=v;}
+  return al;}
+
+function dsSearch(side,d,al,be,ply){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d++;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null;
+  if(ent){ttMove=ent.move;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  const alOrig=al;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];const cap=b[m.y][m.x];
+    if(cap&&cap.t==='K')return WIN-ply;
+    make(m);
+    let v;
+    if(i===0)v=-dsSearch(side^1,d-1,-be,-al,ply+1);
+    else{
+      v=-dsSearch(side^1,d-1,-al-1,-al,ply+1);
+      if(!DS_ABORTED&&v>al&&v<be)v=-dsSearch(side^1,d-1,-be,-al,ply+1);}
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be){
+      if(!m.cap){
+        const kk=DS_KILLERS[ply<512?ply:511];
+        if(!sameMove(m,kk[0])){kk[1]=kk[0];kk[0]={r:m.r,c:m.c,y:m.y,x:m.x};}
+        const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+        DS_HISTORY.set(hk,(DS_HISTORY.get(hk)||0)+d*d);}
+      CUT++;break;}}
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;}
+
+function runDeepSeek(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='deepseek · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0;
+  for(let d=1;d<=D;d++){
+    let al=-INF;
+    let lb=null,ls=-INF;
+    for(let i=0;i<rootMoves.length;i++){
+      const m=rootMoves[i];const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+      make(m);
+      let v;
+      if(i===0)v=-dsSearch(side^1,d-1,-INF,-al,1);
+      else{
+        v=-dsSearch(side^1,d-1,-al-1,-al,1);
+        if(!DS_ABORTED&&v>al)v=-dsSearch(side^1,d-1,-INF,-al,1);}
+      unmake(m);
+      if(DS_ABORTED)break;
+      if(v>ls){ls=v;lb=m;}
+      if(v>al)al=v;}
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;}
+  const f=n=>n.toLocaleString('uk');
+  let t=`deepseek · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;}
+engines['alphabeta deepseek']=()=>runDeepSeek();
+
+function dsSearchAsp(side,d,al,be,ply,allowNull){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d++;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null;
+  if(ent){ttMove=ent.move;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  if(allowNull&&!inCheck&&d>=3&&ply>0){
+    let hasMat=false;
+    for(let r=0;r<N&&!hasMat;r++){const row=b[r];
+      for(let c=0;c<N;c++){const p=row[c];
+        if(p&&p.w===side&&p.t!=='P'&&p.t!=='K'){hasMat=true;break;}}}
+    if(hasMat){
+      const R=2;
+      const v=-dsSearchAsp(side^1,d-1-R,-be,-be+1,ply+1,false);
+      if(DS_ABORTED)return 0;
+      if(v>=be)return v;
+    }
+  }
+  const alOrig=al;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];const cap=b[m.y][m.x];
+    if(cap&&cap.t==='K')return WIN-ply;
+    make(m);
+    let v;
+    if(i===0)v=-dsSearchAsp(side^1,d-1,-be,-al,ply+1,true);
+    else{
+      v=-dsSearchAsp(side^1,d-1,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&v<be)v=-dsSearchAsp(side^1,d-1,-be,-al,ply+1,true);}
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be){
+      if(!m.cap){
+        const kk=DS_KILLERS[ply<512?ply:511];
+        if(!sameMove(m,kk[0])){kk[1]=kk[0];kk[0]={r:m.r,c:m.c,y:m.y,x:m.x};}
+        const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+        DS_HISTORY.set(hk,(DS_HISTORY.get(hk)||0)+d*d);}
+      CUT++;break;}}
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;
+}
+function runDeepSeekAsp(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='asp+null · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0,prevScore=0;
+  for(let d=1;d<=D;d++){
+    let delta=25;
+    let al=Math.max(-INF,prevScore-delta);
+    let be=Math.min(INF,prevScore+delta);
+    let lb=null,ls=-INF;
+    while(true){
+      lb=null;ls=-INF;let localAl=al;
+      for(let i=0;i<rootMoves.length;i++){
+        const m=rootMoves[i];const cap=b[m.y][m.x];
+        if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+        make(m);
+        let v;
+        if(i===0)v=-dsSearchAsp(side^1,d-1,-be,-localAl,1,true);
+        else{
+          v=-dsSearchAsp(side^1,d-1,-localAl-1,-localAl,1,true);
+          if(!DS_ABORTED&&v>localAl)v=-dsSearchAsp(side^1,d-1,-be,-localAl,1,true);}
+        unmake(m);
+        if(DS_ABORTED)break;
+        if(v>ls){ls=v;lb=m;}
+        if(v>localAl)localAl=v;
+      }
+      if(DS_ABORTED)break;
+      if(ls<=al&&al>-INF+1){al=Math.max(-INF,al-delta*2);delta*=2;continue;}
+      if(ls>=be&&be<INF-1){be=Math.min(INF,be+delta*2);delta*=2;continue;}
+      break;
+    }
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;prevScore=ls;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`asp+null · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;
+}
+engines['alphabeta deepseek asp nullmove']=()=>runDeepSeekAsp();
+
+function dsSearchFull(side,d,al,be,ply,allowNull){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d++;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null;
+  if(ent){ttMove=ent.move;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  if(allowNull&&!inCheck&&d>=3&&ply>0){
+    let hasMat=false;
+    for(let r=0;r<N&&!hasMat;r++){const row=b[r];
+      for(let c=0;c<N;c++){const p=row[c];
+        if(p&&p.w===side&&p.t!=='P'&&p.t!=='K'){hasMat=true;break;}}}
+    if(hasMat){
+      const R=2+((d/4)|0);
+      const v=-dsSearchFull(side^1,d-1-R,-be,-be+1,ply+1,false);
+      if(DS_ABORTED)return 0;
+      if(v>=be)return v;
+    }
+  }
+  const alOrig=al;
+  const useFutility=!inCheck&&d<=2&&al>-WIN+1000&&be<WIN-1000;
+  const staticEval=useFutility?ev(side):0;
+  const futilityMargin=80*d;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];
+    const cap=b[m.y][m.x];
+    const srcP=b[m.r][m.c];
+    const isPromo=srcP.t==='P'&&(m.y===0||m.y===N-1);
+    const isQuiet=!cap&&!isPromo;
+    if(cap&&cap.t==='K')return WIN-ply;
+    if(useFutility&&i>0&&isQuiet&&staticEval+futilityMargin<al)continue;
+    make(m);
+    let v,R=0;
+    if(isQuiet&&d>=3&&!inCheck&&i>=3){
+      R=1+(i>=8?1:0)+(i>=16&&d>=5?1:0);
+      if(R>d-2)R=d-2;
+    }
+    if(i===0){
+      v=-dsSearchFull(side^1,d-1,-be,-al,ply+1,true);
+    } else {
+      v=-dsSearchFull(side^1,d-1-R,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&R>0)v=-dsSearchFull(side^1,d-1,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&v<be)v=-dsSearchFull(side^1,d-1,-be,-al,ply+1,true);
+    }
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be){
+      if(!m.cap){
+        const kk=DS_KILLERS[ply<512?ply:511];
+        if(!sameMove(m,kk[0])){kk[1]=kk[0];kk[0]={r:m.r,c:m.c,y:m.y,x:m.x};}
+        const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+        DS_HISTORY.set(hk,(DS_HISTORY.get(hk)||0)+d*d);}
+      CUT++;break;}
+  }
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;
+}
+function runDeepSeekFull(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='full · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0,prevScore=0;
+  for(let d=1;d<=D;d++){
+    let delta=25;
+    let al=d===1?-INF:Math.max(-INF,prevScore-delta);
+    let be=d===1?INF:Math.min(INF,prevScore+delta);
+    let lb=null,ls=-INF;
+    while(true){
+      lb=null;ls=-INF;let localAl=al;
+      for(let i=0;i<rootMoves.length;i++){
+        const m=rootMoves[i];const cap=b[m.y][m.x];
+        if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+        make(m);
+        let v;
+        if(i===0)v=-dsSearchFull(side^1,d-1,-be,-localAl,1,true);
+        else{
+          v=-dsSearchFull(side^1,d-1,-localAl-1,-localAl,1,true);
+          if(!DS_ABORTED&&v>localAl)v=-dsSearchFull(side^1,d-1,-be,-localAl,1,true);}
+        unmake(m);
+        if(DS_ABORTED)break;
+        if(v>ls){ls=v;lb=m;}
+        if(v>localAl)localAl=v;
+      }
+      if(DS_ABORTED)break;
+      if(ls<=al&&al>-INF+1){al=Math.max(-INF,al-delta*2);delta*=2;continue;}
+      if(ls>=be&&be<INF-1){be=Math.min(INF,be+delta*2);delta*=2;continue;}
+      break;
+    }
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;prevScore=ls;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`full · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;
+}
+engines['alphabeta deepseek full']=()=>runDeepSeekFull();
+
+function dsSearchProbCut(side,d,al,be,ply,allowNull){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d++;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null;
+  if(ent){ttMove=ent.move;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  if(d>=5&&!inCheck&&ply>0&&be<WIN-1000&&al>-WIN+1000){
+    const probBeta=be+100;
+    const allMoves=gen(side,false);
+    const probMoves=[];
+    for(const m of allMoves){
+      const cap=b[m.y][m.x];
+      if(cap&&(VAL[cap.t]>=3||cap.t==='K'))probMoves.push(m);
+      else if(ttMove&&sameMove(m,ttMove))probMoves.push(m);
+    }
+    for(const m of probMoves){
+      const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K')return WIN-ply;
+      make(m);
+      const v=-dsSearchProbCut(side^1,d-5,-probBeta,-probBeta+1,ply+1,false);
+      unmake(m);
+      if(DS_ABORTED)return 0;
+      if(v>=probBeta){
+        if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+          DS_TT.set(key,{depth:d,score:probBeta,flag:FLAG_LOWER,move:null});}
+        return probBeta;
+      }
+    }
+  }
+  if(allowNull&&!inCheck&&d>=3&&ply>0){
+    let hasMat=false;
+    for(let r=0;r<N&&!hasMat;r++){const row=b[r];
+      for(let c=0;c<N;c++){const p=row[c];
+        if(p&&p.w===side&&p.t!=='P'&&p.t!=='K'){hasMat=true;break;}}}
+    if(hasMat){
+      const R=2+((d/4)|0);
+      const v=-dsSearchProbCut(side^1,d-1-R,-be,-be+1,ply+1,false);
+      if(DS_ABORTED)return 0;
+      if(v>=be)return v;
+    }
+  }
+  const alOrig=al;
+  const useFutility=!inCheck&&d<=2&&al>-WIN+1000&&be<WIN-1000;
+  const staticEval=useFutility?ev(side):0;
+  const futilityMargin=80*d;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];
+    const cap=b[m.y][m.x];
+    const srcP=b[m.r][m.c];
+    const isPromo=srcP.t==='P'&&(m.y===0||m.y===N-1);
+    const isQuiet=!cap&&!isPromo;
+    if(cap&&cap.t==='K')return WIN-ply;
+    if(useFutility&&i>0&&isQuiet&&staticEval+futilityMargin<al)continue;
+    make(m);
+    let v,R=0;
+    if(isQuiet&&d>=3&&!inCheck&&i>=3){
+      R=1+(i>=8?1:0)+(i>=16&&d>=5?1:0);
+      if(R>d-2)R=d-2;
+    }
+    if(i===0){
+      v=-dsSearchProbCut(side^1,d-1,-be,-al,ply+1,true);
+    } else {
+      v=-dsSearchProbCut(side^1,d-1-R,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&R>0)v=-dsSearchProbCut(side^1,d-1,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&v<be)v=-dsSearchProbCut(side^1,d-1,-be,-al,ply+1,true);
+    }
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be){
+      if(!m.cap){
+        const kk=DS_KILLERS[ply<512?ply:511];
+        if(!sameMove(m,kk[0])){kk[1]=kk[0];kk[0]={r:m.r,c:m.c,y:m.y,x:m.x};}
+        const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+        DS_HISTORY.set(hk,(DS_HISTORY.get(hk)||0)+d*d);}
+      CUT++;break;}
+  }
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;
+}
+function runDeepSeekProbCut(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='probcut · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0,prevScore=0;
+  for(let d=1;d<=D;d++){
+    let delta=25;
+    let al=d===1?-INF:Math.max(-INF,prevScore-delta);
+    let be=d===1?INF:Math.min(INF,prevScore+delta);
+    let lb=null,ls=-INF;
+    while(true){
+      lb=null;ls=-INF;let localAl=al;
+      for(let i=0;i<rootMoves.length;i++){
+        const m=rootMoves[i];const cap=b[m.y][m.x];
+        if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+        make(m);
+        let v;
+        if(i===0)v=-dsSearchProbCut(side^1,d-1,-be,-localAl,1,true);
+        else{
+          v=-dsSearchProbCut(side^1,d-1,-localAl-1,-localAl,1,true);
+          if(!DS_ABORTED&&v>localAl)v=-dsSearchProbCut(side^1,d-1,-be,-localAl,1,true);}
+        unmake(m);
+        if(DS_ABORTED)break;
+        if(v>ls){ls=v;lb=m;}
+        if(v>localAl)localAl=v;
+      }
+      if(DS_ABORTED)break;
+      if(ls<=al&&al>-INF+1){al=Math.max(-INF,al-delta*2);delta*=2;continue;}
+      if(ls>=be&&be<INF-1){be=Math.min(INF,be+delta*2);delta*=2;continue;}
+      break;
+    }
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;prevScore=ls;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`probcut · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;
+}
+engines['alphabeta deepseek probcut']=()=>runDeepSeekProbCut();
+
+// ========== SPECIALEVAL (БЕЗ рекурсії — material inline) ==========
+function attackedByKnightOnly(side,r,c){
+  for(let i=0;i<8;i++){
+    const y=r+KNIGHT[i][0],x=c+KNIGHT[i][1];
+    if(y>=0&&y<N&&x>=0&&x<N){
+      const p=b[y][x];
+      if(p&&p.w===side&&(p.t==='N'||p.t==='A'||p.t==='C'))return true;
+    }
+  }
+  return false;
+}
+function attackedByRookOnly(side,r,c){
+  for(let i=0;i<4;i++){
+    let y=r+ROOK[i][0],x=c+ROOK[i][1];
+    while(y>=0&&y<N&&x>=0&&x<N){
+      const p=b[y][x];
+      if(p){if(p.w===side&&(p.t==='R'||p.t==='Q'||p.t==='C'))return true;break;}
+      y+=ROOK[i][0];x+=ROOK[i][1];
+    }
+  }
+  return false;
+}
+function evSpecial(side){
+  let s=0;
+  const ownR0=side===0?0:N-2, ownR1=side===0?1:N-1;
+  const oppR0=side===0?N-2:0, oppR1=side===0?N-1:1;
+  // Матеріал + зона (в один прохід, БЕЗ виклику ev(), щоб уникнути рекурсії)
+  for(let r=0;r<N;r++){
+    const row=b[r];
+    const inOwn=(r===ownR0||r===ownR1);
+    const inOpp=(r===oppR0||r===oppR1);
+    for(let c=0;c<N;c++){
+      const p=row[c];if(!p)continue;
+      // Базова матеріальна оцінка (вбудована, як у ev())
+      let mv = VAL[p.t]*100;
+      if(p.t=='P')mv+=(p.w?N-1-r:r)*2;
+      else if(p.t!='K')mv+=8-Math.abs(r-8)*.5-Math.abs(c-8)*.5;
+      s += p.w ? mv : -mv;
+      // Зональні бонуси/штрафи (ваша спецоцінка)
+      if(p.w===side){
+        if(inOwn)s+=1;
+        else if(inOpp)s+=0.1;
+      } else {
+        if(inOwn)s-=1.5;
+        else if(inOpp)s-=0.15;
+      }
+    }
+  }
+  // Тактичні штрафи
+  for(let r=0;r<N;r++){
+    for(let c=0;c<N;c++){
+      const p=b[r][c];if(!p)continue;
+      const sign=p.w===side?-1:1;
+      const enemy=p.w^1;
+      if(p.t==='R'&&attackedByKnightOnly(enemy,r,c))s+=sign*300;
+      if(p.t==='Q'&&attackedByRookOnly(enemy,r,c))s+=sign*900;
+    }
+  }
+  return s;
+}
+function runSpecialEval(){
+  const evOrig=ev;
+  try{ ev=evSpecial; return runDeepSeekProbCut(); }
+  finally { ev=evOrig; }
+}
+engines['specialeval261116time']=()=>runSpecialEval();
+
+// ========== SPEEDSPEC — швидка версія (кеш атакерів) ==========
+function evSpecialFast(side){
+  const ownR0 = side===0?0:N-2, ownR1 = side===0?1:N-1;
+  const oppR0 = side===0?N-2:0, oppR1 = side===0?N-1:1;
+  const KNIGHT_OFFS = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+  let s = 0;
+  const rooks = [];
+  const queens = [];
+  for(let r=0;r<N;r++){
+    const row = b[r];
+    const inOwn = (r === ownR0 || r === ownR1);
+    const inOpp = (r === oppR0 || r === oppR1);
+    for(let c=0;c<N;c++){
+      const p = row[c];
+      if(!p) continue;
+      const isMine = p.w === side;
+      let mv = VAL[p.t] * 100;
+      if(p.t === 'P') mv += (p.w ? N-1-r : r) * 2;
+      else if(p.t !== 'K') mv += 8 - Math.abs(r-8)*0.5 - Math.abs(c-8)*0.5;
+      s += isMine ? mv : -mv;
+      if(isMine){
+        if(inOwn) s += 1;
+        else if(inOpp) s += 0.1;
+      } else {
+        if(inOwn) s -= 1.5;
+        else if(inOpp) s -= 0.15;
+      }
+      if(p.t === 'R' || p.t === 'C' || p.t === 'Q') rooks.push({r, c, w: p.w});
+      if(p.t === 'Q') queens.push({r, c, w: p.w});
+      if(p.t === 'R'){
+        const enemyColor = p.w ^ 1;
+        const sign = isMine ? -1 : 1;
+        let attacked = false;
+        for(const [dr,dc] of KNIGHT_OFFS){
+          const kr = r+dr, kc = c+dc;
+          if(kr>=0 && kr<N && kc>=0 && kc<N){
+            const kp = b[kr][kc];
+            if(kp && kp.w === enemyColor && (kp.t === 'N' || kp.t === 'A' || kp.t === 'C')){
+              attacked = true; break;
+            }
+          }
+        }
+        if(attacked) s += sign * 300;
+      }
+    }
+  }
+  for(const q of queens){
+    const enemyColor = q.w ^ 1;
+    const sign = q.w === side ? -1 : 1;
+    for(const rk of rooks){
+      if(rk.w !== enemyColor) continue;
+      let attacked = false;
+      if(rk.r === q.r && rk.c !== q.c){
+        let clear = true;
+        const step = rk.c < q.c ? 1 : -1;
+        for(let x = rk.c + step; x !== q.c; x += step){
+          if(b[q.r][x]){ clear = false; break; }
+        }
+        attacked = clear;
+      } else if(rk.c === q.c && rk.r !== q.r){
+        let clear = true;
+        const step = rk.r < q.r ? 1 : -1;
+        for(let y = rk.r + step; y !== q.r; y += step){
+          if(b[y][q.c]){ clear = false; break; }
+        }
+        attacked = clear;
+      }
+      if(attacked){ s += sign * 900; break; }
+    }
+  }
+  return s;
+}
+function runSpeedSpec(){
+  const evOrig = ev;
+  try { ev = evSpecialFast; return runDeepSeekProbCut(); }
+  finally { ev = evOrig; }
+}
+engines['speedspec261116time'] = () => runSpeedSpec();
+
+function runSpeedMate(){
+  const evOrig = ev;
+  const dSel = document.getElementById('dp');
+  const tSel = document.getElementById('tm');
+  const dOrig = dSel.value, tOrig = tSel.value;
+  const userT = parseInt(tOrig) || 3;
+  const userD = parseInt(dOrig) || 2;
+  try {
+    ev = evSpecialFast;
+    let adaptiveD;
+    if(userT <= 3) adaptiveD = 5;
+    else if(userT <= 10) adaptiveD = 7;
+    else if(userT <= 46) adaptiveD = 9;
+    else adaptiveD = Math.max(11, userD);
+    dSel.value = String(adaptiveD);
+    return runDeepSeekMate();
+  } finally {
+    ev = evOrig;
+    dSel.value = dOrig;
+    tSel.value = tOrig;
+  }
+}
+engines['speedmate261116time'] = () => runSpeedMate();
+
+function dsSearchSingular(side,d,al,be,ply,allowNull){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d++;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null,ttScore=null,ttDepth=0,ttFlag=0;
+  if(ent){ttMove=ent.move;ttScore=ent.score;ttDepth=ent.depth;ttFlag=ent.flag;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  let singularExt=0;
+  if(ttMove&&d>=6&&ply<=3&&ttDepth>=d-2&&ttFlag!==FLAG_UPPER&&Math.abs(ttScore)<WIN-1000){
+    const sBeta=ttScore-25;
+    const reducedD=Math.max(1,Math.floor((d-1)/2));
+    const list=gen(side,false);
+    let nonsingular=false;
+    for(const m of list){
+      if(sameMove(m,ttMove))continue;
+      make(m);
+      const v=-dsSearchSingular(side^1,reducedD-1,-sBeta,-sBeta+1,ply+1,false);
+      unmake(m);
+      if(DS_ABORTED)return 0;
+      if(v>=sBeta){nonsingular=true;break;}
+    }
+    if(!nonsingular)singularExt=1;
+  }
+  if(d>=5&&!inCheck&&ply>0&&be<WIN-1000&&al>-WIN+1000){
+    const probBeta=be+100;
+    const allMoves=gen(side,false);
+    const probMoves=[];
+    for(const m of allMoves){
+      const cap=b[m.y][m.x];
+      if(cap&&(VAL[cap.t]>=3||cap.t==='K'))probMoves.push(m);
+      else if(ttMove&&sameMove(m,ttMove))probMoves.push(m);
+    }
+    for(const m of probMoves){
+      const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K')return WIN-ply;
+      make(m);
+      const v=-dsSearchSingular(side^1,d-5,-probBeta,-probBeta+1,ply+1,false);
+      unmake(m);
+      if(DS_ABORTED)return 0;
+      if(v>=probBeta){
+        if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+          DS_TT.set(key,{depth:d,score:probBeta,flag:FLAG_LOWER,move:null});}
+        return probBeta;
+      }
+    }
+  }
+  if(allowNull&&!inCheck&&d>=3&&ply>0){
+    let hasMat=false;
+    for(let r=0;r<N&&!hasMat;r++){const row=b[r];
+      for(let c=0;c<N;c++){const p=row[c];
+        if(p&&p.w===side&&p.t!=='P'&&p.t!=='K'){hasMat=true;break;}}}
+    if(hasMat){
+      const R=2+((d/4)|0);
+      const v=-dsSearchSingular(side^1,d-1-R,-be,-be+1,ply+1,false);
+      if(DS_ABORTED)return 0;
+      if(v>=be)return v;
+    }
+  }
+  const alOrig=al;
+  const useFutility=!inCheck&&d<=2&&al>-WIN+1000&&be<WIN-1000;
+  const staticEval=useFutility?ev(side):0;
+  const futilityMargin=80*d;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];
+    const cap=b[m.y][m.x];
+    const srcP=b[m.r][m.c];
+    const isPromo=srcP.t==='P'&&(m.y===0||m.y===N-1);
+    const isQuiet=!cap&&!isPromo;
+    if(cap&&cap.t==='K')return WIN-ply;
+    if(useFutility&&i>0&&isQuiet&&staticEval+futilityMargin<al)continue;
+    const ext=(i===0&&singularExt)?1:0;
+    make(m);
+    let v,R=0;
+    if(isQuiet&&d>=3&&!inCheck&&i>=3){
+      R=1+(i>=8?1:0)+(i>=16&&d>=5?1:0);
+      if(R>d-2)R=d-2;
+    }
+    if(i===0){
+      v=-dsSearchSingular(side^1,d-1+ext,-be,-al,ply+1,true);
+    } else {
+      v=-dsSearchSingular(side^1,d-1+ext-R,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&R>0)v=-dsSearchSingular(side^1,d-1+ext,-al-1,-al,ply+1,true);
+      if(!DS_ABORTED&&v>al&&v<be)v=-dsSearchSingular(side^1,d-1+ext,-be,-al,ply+1,true);
+    }
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be){
+      if(!m.cap){
+        const kk=DS_KILLERS[ply<512?ply:511];
+        if(!sameMove(m,kk[0])){kk[1]=kk[0];kk[0]={r:m.r,c:m.c,y:m.y,x:m.x};}
+        const hk=m.r*1e7+m.c*1e5+m.y*1e3+m.x;
+        DS_HISTORY.set(hk,(DS_HISTORY.get(hk)||0)+d*d);}
+      CUT++;break;}
+  }
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;
+}
+function runDeepSeekSingular(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='singular · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0,prevScore=0;
+  for(let d=1;d<=D;d++){
+    let delta=25;
+    let al=d===1?-INF:Math.max(-INF,prevScore-delta);
+    let be=d===1?INF:Math.min(INF,prevScore+delta);
+    let lb=null,ls=-INF;
+    while(true){
+      lb=null;ls=-INF;let localAl=al;
+      for(let i=0;i<rootMoves.length;i++){
+        const m=rootMoves[i];const cap=b[m.y][m.x];
+        if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+        make(m);
+        let v;
+        if(i===0)v=-dsSearchSingular(side^1,d-1,-be,-localAl,1,true);
+        else{
+          v=-dsSearchSingular(side^1,d-1,-localAl-1,-localAl,1,true);
+          if(!DS_ABORTED&&v>localAl)v=-dsSearchSingular(side^1,d-1,-be,-localAl,1,true);}
+        unmake(m);
+        if(DS_ABORTED)break;
+        if(v>ls){ls=v;lb=m;}
+        if(v>localAl)localAl=v;
+      }
+      if(DS_ABORTED)break;
+      if(ls<=al&&al>-INF+1){al=Math.max(-INF,al-delta*2);delta*=2;continue;}
+      if(ls>=be&&be<INF-1){be=Math.min(INF,be+delta*2);delta*=2;continue;}
+      break;
+    }
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;prevScore=ls;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`singular · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · відсікань ${f(CUT)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;
+}
+engines['alphabeta deepseek singular']=()=>runDeepSeekSingular();
+
+function dsSearchMate(side,d,al,be,ply){
+  if(dsTimeUp())return 0;
+  if(al<-WIN+ply)al=-WIN+ply;
+  if(be>WIN-ply-1)be=WIN-ply-1;
+  if(al>=be)return al;
+  const inCheck=isInCheckDS(side);
+  if(inCheck&&d>0)d+=2;
+  if(d<=0)return dsQSearch(side,al,be,ply);
+  const key=hashBoard(side);
+  const ent=DS_TT.get(key);
+  let ttMove=null;
+  if(ent){ttMove=ent.move;
+    if(ent.depth>=d&&ply>0){
+      if(ent.flag===FLAG_EXACT)return ent.score;
+      if(ent.flag===FLAG_LOWER&&ent.score>=be)return ent.score;
+      if(ent.flag===FLAG_UPPER&&ent.score<=al)return ent.score;}}
+  const alOrig=al;
+  const l=gen(side,false);
+  if(!l.length)return inCheck?-WIN+ply:0;
+  for(const m of l){
+    make(m);
+    const chk=isInCheckDS(side^1);
+    unmake(m);
+    if(chk)m.s=(m.s||0)+1e6;
+  }
+  dsOrder(l,ttMove,ply);
+  let best=-INF,bestMove=null;
+  for(let i=0;i<l.length;i++){
+    const m=l[i];
+    const cap=b[m.y][m.x];
+    if(cap&&cap.t==='K')return WIN-ply;
+    make(m);
+    const v=-dsSearchMate(side^1,d-1,-be,-al,ply+1);
+    unmake(m);
+    if(DS_ABORTED)return 0;
+    if(v>best){best=v;bestMove=m;}
+    if(v>al)al=v;
+    if(al>=be)break;
+  }
+  const flag=best<=alOrig?FLAG_UPPER:best>=be?FLAG_LOWER:FLAG_EXACT;
+  if(DS_TT.size<DS_TT_MAX||DS_TT.has(key)){
+    DS_TT.set(key,{depth:d,score:best,flag,
+      move:bestMove?{r:bestMove.r,c:bestMove.c,y:bestMove.y,x:bestMove.x}:null});}
+  return best;
+}
+function runDeepSeekMate(){
+  const D=+document.getElementById('dp').value||2;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now();
+  DS_NODES=0;DS_DEADLINE=Date.now()+T;DS_ABORTED=false;
+  DS_TT=new Map();
+  DS_KILLERS=Array.from({length:512},()=>[null,null]);
+  DS_HISTORY=new Map();
+  CUT=0;ATT=false;
+  const side=turn;
+  const rootMoves=gen(side,false);
+  if(!rootMoves.length){document.getElementById('cnt').textContent='mate · немає ходів';return null;}
+  let best=rootMoves[0],bestScore=-INF,doneD=0;
+  for(let d=1;d<=D;d++){
+    let lb=null,ls=-INF;
+    for(let i=0;i<rootMoves.length;i++){
+      const m=rootMoves[i];const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K'){lb=m;ls=WIN-1;break;}
+      make(m);
+      const v=-dsSearchMate(side^1,d-1,-INF,INF,1);
+      unmake(m);
+      if(DS_ABORTED)break;
+      if(v>ls){ls=v;lb=m;}
+    }
+    if(DS_ABORTED)break;
+    best=lb;bestScore=ls;doneD=d;
+    const bi=rootMoves.indexOf(lb);
+    if(bi>0){rootMoves.splice(bi,1);rootMoves.unshift(lb);}
+    if(Math.abs(bestScore)>WIN-1000)break;
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`mate · глибина ${doneD}/${D} · вузлів ${f(DS_NODES)} · ${Date.now()-t0} мс · оцінка ${(bestScore/100).toFixed(2)} · TT ${DS_TT.size}`;
+  if(Math.abs(bestScore)>WIN-1000){
+    const k=WIN-Math.abs(bestScore);
+    t+=` · ${bestScore>0?'МАТ у':'програш мат у'} ${Math.ceil(k/2)}`;}
+  document.getElementById('cnt').textContent=t;
+  return best;
+}
+engines['alphabeta deepseek mate']=()=>runDeepSeekMate();
+
+function evAgg(side){
+  let wk=null,bk=null;
+  for(let r=0;r<N;r++){for(let c=0;c<N;c++){const p=b[r][c];
+    if(p&&p.t==='K'){if(p.w===0)wk=[r,c];else bk=[r,c];}}}
+  let s=0;
+  for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];if(!p)continue;
+    let v=VAL[p.t]*100;
+    if(p.t==='P')v+=(p.w?N-1-r:r)*2;
+    else if(p.t!=='K')v+=8-Math.abs(r-8)*.5-Math.abs(c-8)*.5;
+    if(p.t!=='K'&&p.t!=='P'){
+      const ok=p.w?wk:bk;
+      if(ok){
+        const dist=Math.abs(r-ok[0])+Math.abs(c-ok[1]);
+        v+=Math.max(0,12-dist)*8;
+      }
+    }
+    if(p.t==='K'){
+      let shield=0;
+      for(const [dy,dx] of KING){
+        const y=r+dy,x=c+dx;
+        if(y>=0&&y<N&&x>=0&&x<N&&b[y][x]&&b[y][x].w===p.w)shield++;
+      }
+      v+=(8-shield)*40;
+    }
+    s+=p.w?v:-v;}}
+  return side?s:-s;
+}
+function runDeepSeekAggressive(){
+  const evOrig=ev;
+  try{ ev=evAgg; return runDeepSeekFull(); }
+  finally { ev=evOrig; }
+}
+engines['alphabeta deepseek aggressive']=()=>runDeepSeekAggressive();
+
+function evBetter(side) {
+  let s = 0;
+  const pawnsByFile = [new Array(17).fill(0), new Array(17).fill(0)];
+  for (let r = 0; r < N; r++) {
+    const row = b[r];
+    for (let c = 0; c < N; c++) {
+      const p = row[c];
+      if (p && p.t === 'P') pawnsByFile[p.w][c]++;
+    }
+  }
+  for (let r = 0; r < N; r++) {
+    const row = b[r];
+    for (let c = 0; c < N; c++) {
+      const p = row[c];
+      if (!p) continue;
+      const w = p.w, t = p.t;
+      let v = VAL[t] * 100;
+      const forward = w ? (N - 1 - r) : r;
+      const cd = Math.abs(r - 8) + Math.abs(c - 8);
+      if (t === 'P') {
+        v += forward * 3;
+        const hasNeighbor = (c > 0 && pawnsByFile[w][c-1] > 0) || (c < N-1 && pawnsByFile[w][c+1] > 0);
+        if (!hasNeighbor) v -= 15;
+        if (pawnsByFile[w][c] > 1) v -= 20;
+        let passed = true;
+        for (let cc = Math.max(0, c-1); cc <= Math.min(N-1, c+1) && passed; cc++) {
+          for (let rr = 0; rr < N && passed; rr++) {
+            const ep = b[rr][cc];
+            if (ep && ep.t === 'P' && ep.w !== w) {
+              if ((w === 0 && rr < r) || (w === 1 && rr > r)) passed = false;
+            }
+          }
+        }
+        if (passed) v += 20 + forward * 5;
+      }
+      else if (t === 'R') {
+        v += Math.max(0, 10 - cd) * 2;
+        if (pawnsByFile[w][c] === 0) v += (pawnsByFile[w^1][c] === 0) ? 20 : 10;
+      }
+      else if (t === 'B' || t === 'N') v += Math.max(0, 8 - cd) * 3;
+      else if (t === 'A' || t === 'C') v += Math.max(0, 10 - cd) * 2;
+      else if (t === 'Q') v += Math.max(0, 6 - cd) * 2;
+      else if (t === 'K') {
+        const sd = w ? -1 : 1;
+        let shield = 0;
+        for (let dc = -1; dc <= 1; dc++) {
+          const sr = r + sd, sc = c + dc;
+          if (sr >= 0 && sr < N && sc >= 0 && sc < N) {
+            const sp = b[sr][sc];
+            if (sp && sp.t === 'P' && sp.w === w) shield++;
+          }
+        }
+        v += shield * 25;
+        if (cd <= 4) v -= 30;
+      }
+      s += w ? v : -v;
+    }
+  }
+  return side ? s : -s;
+}
+function runDeepSeekEval(){
+  const evOrig = ev;
+  try { ev = evBetter; return runDeepSeekProbCut(); }
+  finally { ev = evOrig; }
+}
+engines['alphabeta deepseek eval'] = () => runDeepSeekEval();
+
+function runDeepSeekHybrid(){
+  const evOrig = ev;
+  try { ev = evBetter; return runDeepSeekSingular(); }
+  finally { ev = evOrig; }
+}
+engines['alphabeta deepseek hybrid'] = () => runDeepSeekHybrid();
+
+function runMateFixed(exactD, fixedT){
+  const dSel = document.getElementById('dp');
+  const tSel = document.getElementById('tm');
+  const dOrig = dSel.value, tOrig = tSel.value;
+  dSel.value = String(exactD);
+  if(fixedT) tSel.value = String(fixedT);
+  try { return runDeepSeekMate(); }
+  finally { dSel.value = dOrig; if(fixedT) tSel.value = tOrig; }
+}
+engines['alphabeta deepseek mate 2'] = () => runMateFixed(3, null);
+engines['alphabeta deepseek mate 3'] = () => runMateFixed(5, null);
+engines['alphabeta deepseek mate 4+'] = () => {
+  const dSel = document.getElementById('dp');
+  const tSel = document.getElementById('tm');
+  const dOrig = dSel.value, tOrig = tSel.value;
+  const newD = Math.max(11, parseInt(dSel.value) || 11);
+  dSel.value = String(newD);
+  tSel.value = '150';
+  try { return runDeepSeekMate(); }
+  finally { dSel.value = dOrig; tSel.value = tOrig; }
+};
+
+const MCTS_C=1.4;
+const MCTS_MAX_NODES=100000;
+const MCTS_ROLLOUT_DEPTH=80;
+function mctsNewNode(parent, move){
+  return {parent, move, children:[], visits:0, wins:0, untried:null, terminal:false, terminalVal:0};
+}
+function mctsInitUntried(node, side){
+  const moves=gen(side,false);
+  for(const m of moves){
+    const cap=b[m.y][m.x];
+    m.s=cap?(1+Math.random()):(Math.random()*0.1);
+  }
+  moves.sort((a,b)=>b.s-a.s);
+  node.untried=moves;
+}
+function mctsRollout(side, depth){
+  let plies=0;
+  while(plies<depth){
+    let wK=false,bK=false;
+    for(let r=0;r<N;r++){for(let c=0;c<N;c++){const p=b[r][c];
+      if(p&&p.t==='K'){if(p.w===0)wK=true;else bK=true;}}}
+    if(!wK)return 0;
+    if(!bK)return 1;
+    const moves=gen(side,false);
+    if(!moves.length)return 0.5;
+    let chosen=null;
+    const rnd=Math.random();
+    if(rnd<0.7){
+      let best=-1;
+      for(const m of moves){
+        const t=b[m.y][m.x];
+        if(t){const v=VAL[t.t];if(v>best){best=v;chosen=m;}}
+      }
+    } else if(rnd<0.85){
+      for(const m of moves){
+        make(m);const chk=isInCheckDS(side^1);unmake(m);
+        if(chk){chosen=m;break;}
+      }
+    }
+    if(!chosen)chosen=moves[Math.random()*moves.length|0];
+    make(chosen);
+    const cap=b[chosen.y][chosen.x];
+    if(cap&&cap.t==='K'){
+      unmake(chosen);
+      return (side===0)?1:0;
+    }
+    unmake(chosen);
+    make(chosen);
+    const movedT=b[chosen.y][chosen.x];
+    if(movedT.t==='P'&&(chosen.y===0||chosen.y===N-1))movedT.t='Q';
+    side^=1;
+    plies++;
+  }
+  return 0.5;
+}
+function mctsBackprop(node, result, sideToMove){
+  let s=sideToMove;
+  while(node){
+    node.visits++;
+    if(node.move){
+      const mover=s^1;
+      node.wins+=(mover===0)?result:(1-result);
+    }
+    s^=1;
+    node=node.parent;
+  }
+}
+function runMCTS(){
+  ATT=false;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const D=+document.getElementById('dp').value||2;
+  const t0=Date.now();
+  const deadline=t0+T;
+  const side=turn;
+  const root=mctsNewNode(null,null);
+  mctsInitUntried(root, side);
+  let iterations=0;
+  const boardBackup=JSON.stringify(b);
+  while(Date.now()<deadline && iterations<D*200000){
+    let node=root;
+    let s=side;
+    while(node.untried.length===0 && node.children.length>0){
+      const logN=Math.log(node.visits+1);
+      let best=null,bestUcb=-Infinity;
+      for(const ch of node.children){
+        const exploit=ch.wins/(ch.visits+1e-9);
+        const explore=MCTS_C*Math.sqrt(logN/(ch.visits+1));
+        const ucb=exploit+explore;
+        if(ucb>bestUcb){bestUcb=ucb;best=ch;}
+      }
+      node=best;
+      s^=1;
+    }
+    if(node.untried.length>0){
+      const m=node.untried.pop();
+      const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K'){
+        node.terminal=true;
+        node.terminalVal=(s===0)?1:0;
+        mctsBackprop(node, node.terminalVal, s);
+        iterations++;
+        continue;
+      }
+      m.pt=b[m.r][m.c].t;
+      make(m);
+      const p=b[m.y][m.x];
+      if(p.t==='P'&&(m.y===0||m.y===N-1))p.t='Q';
+      const child=mctsNewNode(node,m);
+      mctsInitUntried(child, s^1);
+      node.children.push(child);
+      node=child;
+      s^=1;
+    }
+    const result=mctsRollout(s, MCTS_ROLLOUT_DEPTH);
+    b=JSON.parse(boardBackup);
+    mctsBackprop(node, result, s);
+    iterations++;
+    if(root.children.length>MCTS_MAX_NODES/100){
+      root.children.sort((a,b)=>b.visits-a.visits);
+      root.children=root.children.slice(0,100);
+    }
+  }
+  let best=null,bestWR=-1;
+  for(const ch of root.children){
+    if(ch.visits<30)continue;
+    const wr=ch.wins/ch.visits;
+    if(wr>bestWR){bestWR=wr;best=ch;}
+  }
+  if(!best){
+    for(const ch of root.children){
+      if(!best||ch.visits>best.visits)best=ch;
+    }
+  }
+  const f=n=>n.toLocaleString('uk');
+  let t=`mcts · ітерацій ${f(iterations)} · дітей ${root.children.length} · ${Date.now()-t0} мс`;
+  if(best){
+    const wr=best.visits>0?(best.wins/best.visits*100).toFixed(1):'—';
+    t+=` · winrate ${wr}% · візитів ${best.visits}`;
+  }
+  document.getElementById('cnt').textContent=t;
+  if(!best){const fb=gen(turn,false);return fb.length?fb[0]:null;}
+  return best.move;
+}
+engines['mcts deepseek']=()=>runMCTS();
+
+const MCTS_EVAL_C=1.4;
+const MCTS_EVAL_ROLLOUT=12;
+function mctsEvalRollout(side){
+  let plies=0;
+  while(plies<MCTS_EVAL_ROLLOUT){
+    let wK=false,bK=false;
+    for(let r=0;r<N;r++){const row=b[r];for(let c=0;c<N;c++){const p=row[c];
+      if(p&&p.t==='K'){if(p.w===0)wK=true;else bK=true;}}}
+    if(!wK)return 0;
+    if(!bK)return 1;
+    const moves=gen(side,false);
+    if(!moves.length)return 0.5;
+    let chosen=null;
+    const rnd=Math.random();
+    if(rnd<0.6){
+      let best=-1;
+      for(const m of moves){
+        const t=b[m.y][m.x];
+        if(t){const v=VAL[t.t];if(v>best){best=v;chosen=m;}}
+      }
+    }
+    if(!chosen)chosen=moves[Math.random()*moves.length|0];
+    make(chosen);
+    const p=b[chosen.y][chosen.x];
+    if(p.t==='P'&&(chosen.y===0||chosen.y===N-1))p.t='Q';
+    side^=1;
+    plies++;
+  }
+  const e=ev(side);
+  const wp=1/(1+Math.exp(-e/200));
+  return side===0?wp:1-wp;
+}
+function runMCTSEval(){
+  ATT=false;
+  const T=(+document.getElementById('tm').value||3)*1000;
+  const t0=Date.now(), deadline=t0+T;
+  const side=turn;
+  const root={parent:null,move:null,children:[],visits:0,wins:0,untried:null};
+  root.untried=gen(side,false);
+  for(const m of root.untried){
+    const cap=b[m.y][m.x];
+    m.s=cap?(1+Math.random()):(Math.random()*0.1);
+  }
+  root.untried.sort((a,b)=>b.s-a.s);
+  const backup=JSON.stringify(b);
+  let iterations=0;
+  while(Date.now()<deadline){
+    let node=root, s=side;
+    while(node.untried.length===0 && node.children.length>0){
+      const logN=Math.log(node.visits+1);
+      let best=null,bestV=-Infinity;
+      for(const ch of node.children){
+        const q=ch.wins/(ch.visits+1e-9);
+        const ucb=q+MCTS_EVAL_C*Math.sqrt(logN/(ch.visits+1));
+        if(ucb>bestV){bestV=ucb;best=ch;}
+      }
+      if(!best)break;
+      node=best; s^=1;
+    }
+    if(node.untried.length>0){
+      const m=node.untried.pop();
+      const cap=b[m.y][m.x];
+      if(cap&&cap.t==='K'){
+        b=JSON.parse(backup);
+        mctsBackprop(node,(s===0)?1:0,s);
+        iterations++;
+        continue;
+      }
+      m.pt=b[m.r][m.c].t;
+      make(m);
+      const p=b[m.y][m.x];
+      if(p.t==='P'&&(m.y===0||m.y===N-1))p.t='Q';
+      const child={parent:node,move:m,children:[],visits:0,wins:0,untried:gen(s^1,false)};
+      for(const mm of child.untried){
+        const cc=b[mm.y][mm.x];
+        mm.s=cc?(1+Math.random()):(Math.random()*0.1);
+      }
+      child.untried.sort((a,b)=>b.s-a.s);
+      node.children.push(child);
+      node=child; s^=1;
+    }
+    const result=mctsEvalRollout(s);
+    b=JSON.parse(backup);
+    mctsBackprop(node,result,s);
+    iterations++;
+    if(root.children.length>100){
+      root.children.sort((a,b)=>b.visits-a.visits);
+      root.children.length=100;
+    }
+  }
+  let best=null,bestWR=-1;
+  for(const ch of root.children){
+    if(ch.visits<15)continue;
+    const wr=ch.wins/ch.visits;
+    if(wr>bestWR){bestWR=wr;best=ch;}
+  }
+  if(!best)for(const ch of root.children)if(!best||ch.visits>best.visits)best=ch;
+  const f=n=>n.toLocaleString('uk');
+  let t=`mcts eval · ітерацій ${f(iterations)} · дітей ${root.children.length} · ${Date.now()-t0} мс`;
+  if(best)t+=` · winrate ${(bestWR*100).toFixed(1)}% · візитів ${best.visits}`;
+  document.getElementById('cnt').textContent=t;
+  if(!best){const fb=gen(turn,false);return fb.length?fb[0]:null;}
+  return best.move;
+}
+engines['mcts eval deepseek']=()=>runMCTSEval();
+
+const MCTS_RAVE_C = 1.4;
+const MCTS_RAVE_ROLLOUT = 14;
+const MCTS_RAVE_AMAF_MAX = 500;
+function raveKey(m){ return m.r*4913 + m.c*289 + m.y*17 + m.x; }
+function raveRollout(side, stack){
+  let plies = 0;
+  const moves = [];
+  while (plies < MCTS_RAVE_ROLLOUT) {
+    let wK = false, bK = false;
+    for (let r = 0; r < N; r++) {
+      const row = b[r];
+      for (let c = 0; c < N; c++) {
+        const p = row[c];
+        if (p && p.t === 'K') { if (p.w === 0) wK = true; else bK = true; }
+      }
+    }
+    if (!wK) return { result: 0, moves };
+    if (!bK) return { result: 1, moves };
+    const ml = gen(side, false);
+    if (!ml.length) return { result: 0.5, moves };
+    let chosen = null;
+    if (Math.random() < 0.6) {
+      let best = -1;
+      for (const m of ml) {
+        const t = b[m.y][m.x];
+        if (t) { const v = VAL[t.t]; if (v > best) { best = v; chosen = m; } }
+      }
+    }
+    if (!chosen) chosen = ml[Math.random() * ml.length | 0];
+    make(chosen);
+    stack.push(chosen);
+    moves.push({ key: raveKey(chosen), side });
+    side ^= 1;
+    plies++;
+  }
+  const e = ev(side);
+  const wp = 1 / (1 + Math.exp(-e / 200));
+  return { result: side === 0 ? wp : 1 - wp, moves };
+}
+function raveSelect(node){
+  let best = null, bestV = -Infinity;
+  const logN = Math.log(node.visits + 1);
+  for (const ch of node.children) {
+    const v = ch.visits, w = ch.wins;
+    const am = node.amaf.get(raveKey(ch.move));
+    const av = am ? am.visits : 0;
+    const aw = am ? am.wins : 0;
+    const q = v > 0 ? w / v : 0.5;
+    const aq = av > 0 ? aw / av : q;
+    const beta = av / (av + v + 4 * av * v / 100 + 1e-9);
+    const mixed = (1 - beta) * q + beta * aq;
+    const explore = MCTS_RAVE_C * Math.sqrt(logN / (v + 1));
+    const uct = mixed + explore;
+    if (uct > bestV) { bestV = uct; best = ch; }
+  }
+  return best;
+}
+function raveBackprop(node, result, moves){
+  let cur = node;
+  while (cur) {
+    cur.visits++;
+    if (cur.parent) {
+      cur.wins += (cur.side === 0 ? result : 1 - result);
+    }
+    for (const { key, side } of moves) {
+      if (side !== cur.side) continue;
+      let a = cur.amaf.get(key);
+      if (a) {
+        a.visits++;
+        a.wins += (cur.side === 0 ? result : 1 - result);
+      } else if (cur.amaf.size < MCTS_RAVE_AMAF_MAX) {
+        cur.amaf.set(key, { visits: 1, wins: (cur.side === 0 ? result : 1 - result) });
+      }
+    }
+    cur = cur.parent;
+  }
+}
+function runMCTSRAVE(){
+  ATT=false;
+  const T = (+document.getElementById('tm').value || 3) * 1000;
+  const t0 = Date.now(), deadline = t0 + T;
+  const root = {
+    parent: null, move: null, side: turn, children: [], visits: 0, wins: 0,
+    amaf: new Map(), untried: gen(turn, false)
+  };
+  const stack = [];
+  let iterations = 0;
+  while (Date.now() < deadline) {
+    let node = root;
+    while (node.untried.length === 0 && node.children.length > 0) {
+      const next = raveSelect(node);
+      if (!next) break;
+      make(next.move);
+      stack.push(next.move);
+      node = next;
+    }
+    let result, moves = [], terminal = false;
+    if (node.untried.length > 0) {
+      const m = node.untried.pop();
+      const cap = b[m.y][m.x];
+      if (cap && cap.t === 'K') {
+        result = node.side === 0 ? 1 : 0;
+        terminal = true;
+      } else {
+        make(m);
+        stack.push(m);
+        const child = {
+          parent: node, move: m, side: node.side ^ 1,
+          children: [], visits: 0, wins: 0, amaf: new Map(),
+          untried: gen(node.side ^ 1, false)
+        };
+        node.children.push(child);
+        node = child;
+      }
+    }
+    if (!terminal) {
+      const r = raveRollout(node.side, stack);
+      result = r.result;
+      moves = r.moves;
+    }
+    while (stack.length) unmake(stack.pop());
+    raveBackprop(node, result, moves);
+    iterations++;
+  }
+  let best = null, bestV = -1;
+  for (const ch of root.children) {
+    if (ch.visits > bestV) { bestV = ch.visits; best = ch; }
+  }
+  const f = n => n.toLocaleString('uk');
+  let msg = `mcts rave · ітерацій ${f(iterations)} · дітей ${root.children.length} · ${Date.now() - t0} мс`;
+  if (best) {
+    const wr = best.visits > 0 ? (best.wins / best.visits * 100).toFixed(1) : '—';
+    msg += ` · winrate ${wr}% · візитів ${best.visits}`;
+  }
+  document.getElementById('cnt').textContent = msg;
+  if (!best) { const fb = gen(turn, false); return fb.length ? fb[0] : null; }
+  return best.move;
+}
+engines['mcts rave deepseek'] = () => runMCTSRAVE();
+
+let _MRT_ROOT = null;
+let _MRT_MV_LEN = 0;
+let _MRT_MV_SNAP = [];
+function _mrtReuse(){
+  if (!_MRT_ROOT) return null;
+  if (MV.length !== _MRT_MV_LEN + 2) return null;
+  for (let i = 0; i < _MRT_MV_LEN; i++){
+    const m = MV[i], s = _MRT_MV_SNAP[i];
+    if (!m || m[0]!==s[0] || m[1]!==s[1] || m[2]!==s[2] || m[3]!==s[3]) return null;
+  }
+  let node = _MRT_ROOT;
+  for (let i = _MRT_MV_LEN; i < MV.length; i++){
+    const [r,c,y,x] = MV[i];
+    let found = null;
+    for (const ch of node.children){
+      const mm = ch.move;
+      if (mm && mm.r===r && mm.c===c && mm.y===y && mm.x===x){ found = ch; break; }
+    }
+    if (!found) return null;
+    node = found;
+  }
+  if (node.side !== turn) return null;
+  node.parent = null;
+  node.move = null;
+  return node;
+}
+function _mrtSave(root){
+  _MRT_ROOT = root;
+  _MRT_MV_LEN = MV.length;
+  _MRT_MV_SNAP = MV.map(m => [m[0], m[1], m[2], m[3]]);
+}
+function runMCTSRAVETree(){
+  ATT=false;
+  const T = (+document.getElementById('tm').value || 3) * 1000;
+  const t0 = Date.now(), deadline = t0 + T;
+  const reused = _mrtReuse();
+  let reusedPlies = reused ? (MV.length - _MRT_MV_LEN) : 0;
+  const root = reused || {
+    parent: null, move: null, side: turn, children: [], visits: 0, wins: 0,
+    amaf: new Map(), untried: gen(turn, false)
+  };
+  const stack = [];
+  let iterations = 0;
+  while (Date.now() < deadline){
+    let node = root;
+    while (node.untried.length === 0 && node.children.length > 0){
+      const next = raveSelect(node);
+      if (!next) break;
+      make(next.move); stack.push(next.move); node = next;
+    }
+    let result, moves = [], terminal = false;
+    if (node.untried.length > 0){
+      const m = node.untried.pop();
+      const cap = b[m.y][m.x];
+      if (cap && cap.t === 'K'){
+        result = node.side === 0 ? 1 : 0; terminal = true;
+      } else {
+        make(m); stack.push(m);
+        const child = {
+          parent: node, move: m, side: node.side ^ 1,
+          children: [], visits: 0, wins: 0, amaf: new Map(),
+          untried: gen(node.side ^ 1, false)
+        };
+        node.children.push(child); node = child;
+      }
+    }
+    if (!terminal){
+      const r = raveRollout(node.side, stack);
+      result = r.result; moves = r.moves;
+    }
+    while (stack.length) unmake(stack.pop());
+    raveBackprop(node, result, moves);
+    iterations++;
+  }
+  let best = null, bestV = -1;
+  for (const ch of root.children){
+    if (ch.visits > bestV){ bestV = ch.visits; best = ch; }
+  }
+  _mrtSave(root);
+  const f = n => n.toLocaleString('uk');
+  let msg = `mcts rave tree · ітерацій ${f(iterations)} · дітей ${root.children.length} · ${Date.now()-t0} мс`;
+  if (reusedPlies) msg += ` · reuse ${reusedPlies} ply`;
+  if (best){
+    const wr = best.visits > 0 ? (best.wins/best.visits*100).toFixed(1) : '—';
+    msg += ` · winrate ${wr}% · візитів ${best.visits}`;
+  }
+  document.getElementById('cnt').textContent = msg;
+  if (!best) { const fb = gen(turn, false); return fb.length ? fb[0] : null; }
+  return best.move;
+}
+engines['mcts rave tree deepseek'] = () => runMCTSRAVETree();
+
+function simplePriorsFrom(moves){
+  const priors = new Map();
+  let maxS = -Infinity;
+  const tmp = [];
+  for(const m of moves){
+    const t = b[m.y][m.x];
+    let s = t ? VAL[t.t] * 100 : 0;
+    const src = b[m.r][m.c];
+    if(src.t === 'P' && (m.y === 0 || m.y === N-1)) s += 500;
+    tmp.push({key: raveKey(m), s});
+    if(s > maxS) maxS = s;
+  }
+  let sum = 0;
+  const T = 200;
+  for(const {key, s} of tmp){
+    const p = Math.exp((s - maxS) / T);
+    priors.set(key, p);
+    sum += p;
+  }
+  for(const k of priors.keys()) priors.set(k, priors.get(k) / sum);
+  return priors;
+}
+function makePUCTNode(parent, move, side, isRoot){
+  const moves = gen(side, false);
+  const priors = isRoot ? simplePriorsFrom(moves) : null;
+  return {parent, move, side, children: [], visits: 0, wins: 0, amaf: new Map(), untried: moves, priors};
+}
+function puctSelect(node){
+  let best = null, bestV = -Infinity;
+  const sqrtN = Math.sqrt(node.visits + 1);
+  for(const ch of node.children){
+    const v = ch.visits, w = ch.wins;
+    const q = v > 0 ? w / v : 0.5;
+    const am = node.amaf.get(raveKey(ch.move));
+    const av = am ? am.visits : 0;
+    const aw = am ? am.wins : 0;
+    const aq = av > 0 ? aw / av : q;
+    const beta = av / (av + v + 4 * av * v / 100 + 1e-9);
+    const mixed = (1 - beta) * q + beta * aq;
+    const p = node.priors
+      ? (node.priors.get(raveKey(ch.move)) || 0)
+      : (1 / Math.max(1, node.children.length));
+    const explore = MCTS_RAVE_C * p * sqrtN / (1 + v);
+    const uct = mixed + explore;
+    if(uct > bestV){ bestV = uct; best = ch; }
+  }
+  return best;
+}
+function runMCTSPUCT(){
+  ATT=false;
+  const T = (+document.getElementById('tm').value || 3) * 1000;
+  const t0 = Date.now(), deadline = t0 + T;
+  const root = makePUCTNode(null, null, turn, true);
+  const stack = [];
+  let iterations = 0;
+  while(Date.now() < deadline){
+    let node = root;
+    while(node.untried.length === 0 && node.children.length > 0){
+      const next = puctSelect(node);
+      if(!next) break;
+      make(next.move); stack.push(next.move); node = next;
+    }
+    let result, moves = [], terminal = false;
+    if(node.untried.length > 0){
+      const m = node.untried.pop();
+      const cap = b[m.y][m.x];
+      if(cap && cap.t === 'K'){
+        result = node.side === 0 ? 1 : 0; terminal = true;
+      } else {
+        make(m); stack.push(m);
+        const child = makePUCTNode(node, m, node.side ^ 1, false);
+        node.children.push(child); node = child;
+      }
+    }
+    if(!terminal){
+      const r = raveRollout(node.side, stack);
+      result = r.result; moves = r.moves;
+    }
+    while(stack.length) unmake(stack.pop());
+    raveBackprop(node, result, moves);
+    iterations++;
+  }
+  let best = null, bestV = -1;
+  for(const ch of root.children){
+    if(ch.visits > bestV){ bestV = ch.visits; best = ch; }
+  }
+  const f = n => n.toLocaleString('uk');
+  let msg = `mcts puct · ітерацій ${f(iterations)} · дітей ${root.children.length} · ${Date.now()-t0} мс`;
+  if(best){
+    const wr = best.visits > 0 ? (best.wins/best.visits*100).toFixed(1) : '—';
+    msg += ` · winrate ${wr}% · візитів ${best.visits}`;
+  }
+  document.getElementById('cnt').textContent = msg;
+  if(!best){ const fb = gen(turn, false); return fb.length ? fb[0] : null; }
+  return best.move;
+}
+engines['mcts puct deepseek'] = () => runMCTSPUCT();
+
+let timer;
+function tick(){
+  clearTimeout(timer);
+  if(over||paused)return;
+  const e=side();if(e=='human')return;
+  timer=setTimeout(()=>{
+    const run=()=>{
+      if(over||paused||side()!=e)return;
+      const l=all();
+      if(!l.length){over=true;note='Немає ходів';draw();return}
+      let m;
+      try{
+        m=engines[e](l);
+      }catch(err){
+        console.error('Engine error:', e, err);
+        m=l[Math.random()*l.length|0];
+      }
+      if(!m){over=true;note='Рушій не знайшов ходу';draw();return}
+      mv(m.r,m.c,m.y,m.x);
+    };
+    if(e!=='random'&&e!=='greedy'){document.getElementById('msg').textContent='Рушій думає…';setTimeout(run,40)}else run();
+  },180);
+}
+
+function click(r,c){
+  if(over||side()!='human')return;
+  if(sel&&sel.m.some(m=>m[0]==r&&m[1]==c)){mv(sel.r,sel.c,r,c);return}
+  const p=b[r][c];
+  sel=(p&&p.w==turn)?{r,c,m:moves(r,c)}:null;draw();
+}
+const tap=e=>{
+  const sv=bd.querySelector('svg');if(!sv)return;
+  const q=sv.getBoundingClientRect(),c=Math.floor((e.clientX-q.left)/CELL),r=Math.floor((e.clientY-q.top)/CELL);
+  if(r>=0&&c>=0&&r<N&&c<N)click(r,c);
+};
+let drag=null;
+wr.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,sl:wr.scrollLeft,st:wr.scrollTop,moved:false};try{wr.setPointerCapture(e.pointerId)}catch(_){}});
+wr.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(Math.abs(dx)+Math.abs(dy)>8)drag.moved=true;
+  if(drag.moved){wr.scrollLeft=drag.sl-dx;wr.scrollTop=drag.st-dy}
+});
+wr.addEventListener('pointerup',e=>{if(drag&&!drag.moved)tap(e);drag=null});
+wr.addEventListener('pointercancel',()=>{drag=null});
+
+function draw(){
+  const S=N*CELL,m=CELL/2;
+  const mk=(id,col)=>`<marker id="${id}" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0 .5L6 3L0 5.5z" fill="${col}"/></marker>`;
+  let h=`<svg width="${S}" height="${S}" style="display:block"><defs>${mk('mg','#1b8a3a')}${mk('mr','#d32f2f')}${mk('mo','#ff9800')}</defs>`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)
+    h+=`<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}" fill="${(r+c)%2?'#f2d230':'#d6d6d6'}"/>`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const p=b[r][c];if(!p)continue;
+    h+=`<g transform="translate(${c*CELL+CELL*.1} ${r*CELL+CELL*.1}) scale(${CELL*.8/20})" fill="${p.w?'#e53935':'#1e5fe0'}" stroke="${p.w?'#ff8080':'#6699ff'}" stroke-width="1"><path d="${IC[p.t]}" vector-effect="non-scaling-stroke"/></g>`;
+    // Круг туроконя (C) / слоноконя (A): ЦЕНТР, половина розміру, світло-залитий з темною обводкою
+    if(p.t==='A'||p.t==='C'){
+      const cx=c*CELL+CELL/2;
+      const cy=r*CELL+CELL/2;
+      const rad=CELL*0.10;
+      const fill = p.w ? '#ffaaaa' : '#99ccff';
+      const stroke = p.w ? '#990000' : '#003399';
+      h+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="${fill}" stroke="${stroke}" stroke-width="1" pointer-events="none"/>`;
+    }
+  }
+  const L=(r,c,y,x,col,k)=>`<line x1="${c*CELL+m}" y1="${r*CELL+m}" x2="${x*CELL+m}" y2="${y*CELL+m}" stroke="${col}" stroke-width="1" opacity=".8" marker-end="url(#${k})"/>`;
+  if(!over&&document.getElementById('ar').checked)
+    for(const a of all()){const cp=b[a.y][a.x];h+=L(a.r,a.c,a.y,a.x,cp?'#d32f2f':'#1b8a3a',cp?'mr':'mg')}
+  if(last)for(const[r,c]of[[last[0],last[1]],[last[2],last[3]]])
+    h+=`<rect x="${c*CELL+.5}" y="${r*CELL+.5}" width="${CELL-1}" height="${CELL-1}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+  if(last)h+=L(...last,'#ff9800','mo');
+  if(sel){
+    h+=`<rect x="${sel.c*CELL+.5}" y="${sel.r*CELL+.5}" width="${CELL-1}" height="${CELL-1}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+    for(const[y,x]of sel.m)h+=`<rect x="${x*CELL+3}" y="${y*CELL+3}" width="${CELL-6}" height="${CELL-6}" fill="none" stroke="#8e24aa" stroke-width="1"/>`;
+  }
+  h+='</svg>';
+  const sl=wr.scrollLeft,st=wr.scrollTop;bd.style.padding=wr.clientHeight+'px '+wr.clientWidth+'px';bd.innerHTML=h;wr.scrollLeft=sl;wr.scrollTop=st;
+  const status=over?note:(turn?'Хід білих':'Хід чорних')+' · хід №'+(cur+1);
+  document.getElementById('msg').textContent=`Пам’ять ${slot} з ${SLOTS} · ${status}`;
+  tick();
+}
+document.getElementById('u').onclick=()=>go(-1);
+document.getElementById('f').onclick=()=>go(1);
+const fit=()=>{CELL=Math.max(14,Math.floor((Math.min(wr.clientWidth,wr.clientHeight)-16)/N))};
+const center=()=>{wr.scrollLeft=wr.clientWidth-(wr.clientWidth-N*CELL)/2;wr.scrollTop=wr.clientHeight-(wr.clientHeight-N*CELL)/2};
+const zoom=d=>{CELL=Math.max(14,Math.min(90,CELL+d));draw()};
+document.getElementById('zm').onclick=()=>zoom(-6);
+document.getElementById('zp').onclick=()=>zoom(6);
+document.getElementById('fit').onclick=()=>{fit();draw();center()};
+document.getElementById('ar').onchange=draw;
+document.getElementById('n').onclick=()=>openSlot(slot%SLOTS+1,true);
+document.getElementById('p').onclick=e=>{paused=!paused;e.target.textContent=paused?'Продовжити':'Пауза';tick()};
+document.getElementById('w').onchange=()=>{updInfo();tick()};
+document.getElementById('k').onchange=()=>{updInfo();tick()};
+const kp=document.getElementById('kp'),kd=document.getElementById('kd');let kv='';
+const kshow=t=>{kd.textContent=t||kv||'—'};
+[...'123456789','⌫','0','OK'].forEach(k=>{
+  const e=document.createElement('button');e.textContent=k;
+  e.onclick=()=>{
+    if(k=='OK'){const n=parseInt(kv,10);if(n>=1&&n<=SLOTS){kp.hidden=true;openSlot(n,false)}else kshow('введи 1–'+SLOTS);return}
+    if(k=='⌫')kv=kv.slice(0,-1);else if(kv.length<3)kv+=k;
+    kshow();
+  };
+  document.getElementById('kg').append(e);
+});
+document.getElementById('m').onclick=()=>{kv='';kshow();kp.style.left='50%';kp.style.top='50%';kp.style.transform='translate(-50%,-50%)';kp.hidden=false};
+let kdrag=null,kmoved=false;
+kp.style.touchAction='none';
+kp.addEventListener('pointerdown',e=>{const q=kp.getBoundingClientRect();kdrag={x:e.clientX,y:e.clientY,l:q.left,t:q.top,id:e.pointerId,cap:false};kmoved=false});
+kp.addEventListener('pointermove',e=>{
+  if(!kdrag)return;
+  const dx=e.clientX-kdrag.x,dy=e.clientY-kdrag.y;
+  if(!kmoved&&Math.abs(dx)+Math.abs(dy)>8){kmoved=true;try{kp.setPointerCapture(kdrag.id)}catch(_){}}
+  if(kmoved){kp.style.transform='none';kp.style.left=(kdrag.l+dx)+'px';kp.style.top=(kdrag.t+dy)+'px'}
+});
+kp.addEventListener('pointerup',()=>{kdrag=null});
+kp.addEventListener('pointercancel',()=>{kdrag=null});
+kp.addEventListener('click',e=>{if(kmoved){e.stopPropagation();e.preventDefault();kmoved=false}},true);
+document.getElementById('kx').onclick=()=>{kp.hidden=true};
+updInfo();
+fit();openSlot(Number(store.get('c17_cur'))||1,false);center();
+</script></body></html> 
